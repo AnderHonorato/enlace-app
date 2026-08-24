@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" fill="none">
+  <!-- Moldura de carta presa com fita, totalmente vetorial e original. -->
+  <path d="M25 38C168 28 323 39 475 31C645 22 817 39 975 29C968 180 978 377 968 575C760 564 553 578 340 570C212 565 102 576 28 562C35 389 21 208 25 38Z" stroke="#28314F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".64" vector-effect="non-scaling-stroke"/>
+  <path d="M37 48C224 37 365 47 509 39C674 30 818 46 962 38M958 49C954 230 966 400 957 559M946 562C740 553 535 568 337 559C205 553 109 564 40 552" stroke="#A33152" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="138 11 76 9" opacity=".52" vector-effect="non-scaling-stroke"/>
+  <g transform="rotate(-3 507 34)">
+    <path d="M434 8L580 13L575 57L428 51Z" fill="#C79A67" opacity=".52"/>
+    <path d="M435 9L580 14M429 50L575 57" stroke="#8D633E" stroke-width="2" opacity=".45" vector-effect="non-scaling-stroke"/>
+  </g>
+  <g transform="rotate(8 62 531)">
+    <path d="M26 494L95 497L90 568L21 562Z" fill="#C79A67" opacity=".48"/>
+    <path d="M27 495L95 498M21 561L90 568" stroke="#8D633E" stroke-width="2" opacity=".42" vector-effect="non-scaling-stroke"/>
+  </g>
+  <path d="M925 524C913 507 886 518 893 539C897 553 919 565 926 571C932 563 953 548 954 534C956 512 933 512 925 524Z" fill="#A33152" opacity=".82"/>
+  <g fill="#28314F" opacity=".55">
+    <circle cx="944" cy="496" r="3"/>
+    <circle cx="957" cy="488" r="2"/>
+  </g>
+</svg>

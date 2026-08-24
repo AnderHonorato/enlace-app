@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Enlace v2 — a marca do redesign: dois anéis enlaçados, tinta e carmim,
+       sobre papel. O raio de 44 é o "3xl" da escala nova em tamanho de ícone. -->
+  <rect width="512" height="512" rx="44" fill="#F6F1E8"/>
+  <rect x="0.5" y="0.5" width="511" height="511" rx="43.5" fill="none" stroke="#E0D5C1" stroke-width="1"/>
+  <g transform="translate(256 256) scale(11.3) translate(-17 -17)">
+    <circle cx="13" cy="17" r="8.5" fill="none" stroke="#17140F" stroke-width="1.7"/>
+    <circle cx="21" cy="17" r="8.5" fill="#C0395C" fill-opacity="0.16" stroke="#C0395C" stroke-width="1.7"/>
+  </g>
+</svg>

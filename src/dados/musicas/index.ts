@@ -1,0 +1,52 @@
+import parte1 from "./parte-001.json";
+import parte2 from "./parte-002.json";
+import parte3 from "./parte-003.json";
+import parte4 from "./parte-004.json";
+import parte5 from "./parte-005.json";
+import parte6 from "./parte-006.json";
+import parte7 from "./parte-007.json";
+import parte8 from "./parte-008.json";
+import parte9 from "./parte-009.json";
+import parte10 from "./parte-010.json";
+import parte11 from "./parte-011.json";
+import parte12 from "./parte-012.json";
+import parte13 from "./parte-013.json";
+import parte14 from "./parte-014.json";
+import parte15 from "./parte-015.json";
+import parte16 from "./parte-016.json";
+import parte17 from "./parte-017.json";
+import parte18 from "./parte-018.json";
+import parte19 from "./parte-019.json";
+import parte20 from "./parte-020.json";
+import parte21 from "./parte-021.json";
+import parte22 from "./parte-022.json";
+import parte23 from "./parte-023.json";
+import parte24 from "./parte-024.json";
+import parte25 from "./parte-025.json";
+import parte26 from "./parte-026.json";
+import parte27 from "./parte-027.json";
+import parte28 from "./parte-028.json";
+import parte29 from "./parte-029.json";
+import parte30 from "./parte-030.json";
+import parte31 from "./parte-031.json";
+import parte32 from "./parte-032.json";
+import parte33 from "./parte-033.json";
+import parte34 from "./parte-034.json";
+import parte35 from "./parte-035.json";
+import parte36 from "./parte-036.json";
+import parte37 from "./parte-037.json";
+import parte38 from "./parte-038.json";
+
+export type FaixaCatalogo = {
+  a: string;
+  t: string;
+  y: number | null;
+  g: string | null;
+  p: string;
+  c: string | null;
+  r: number;
+};
+
+const catalogoMusical = [...parte1, ...parte2, ...parte3, ...parte4, ...parte5, ...parte6, ...parte7, ...parte8, ...parte9, ...parte10, ...parte11, ...parte12, ...parte13, ...parte14, ...parte15, ...parte16, ...parte17, ...parte18, ...parte19, ...parte20, ...parte21, ...parte22, ...parte23, ...parte24, ...parte25, ...parte26, ...parte27, ...parte28, ...parte29, ...parte30, ...parte31, ...parte32, ...parte33, ...parte34, ...parte35, ...parte36, ...parte37, ...parte38] as FaixaCatalogo[];
+
+export default catalogoMusical;

@@ -1,0 +1,117 @@
+/* ── Movimento ────────────────────────────────────────────────────────────
+   Uma curva só para tudo: cubic-bezier(.22,1,.36,1). As entradas são
+   escalonadas em 0.1 / 0.18 / 0.3s para o conteúdo "assentar" na página
+   como folhas caindo, em vez de aparecer de uma vez. */
+@keyframes rise  { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes riseS { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pop   { from { opacity: 0; transform: scale(0.92) translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes growX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes sheetUp { from { transform: translateY(104%); } to { transform: none; } }
+@keyframes sheen { 0% { transform: translateX(-130%) skewX(-14deg); } 55%, 100% { transform: translateX(320%) skewX(-14deg); } }
+@keyframes flame { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.07); } }
+@keyframes beat  { 0%, 100% { transform: scale(1); } 22% { transform: scale(1.4); } 42% { transform: scale(0.93); } 68% { transform: scale(1.12); } }
+@keyframes halo  { from { transform: scale(0.6); opacity: 0.5; } to { transform: scale(2.2); opacity: 0; } }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes caret { 0%, 48% { opacity: 1; } 49%, 100% { opacity: 0; } }
+@keyframes newpulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.45); opacity: 0.45; } }
+/* Barrinha do equalizador da rádio (tira de "tocando agora" no cabeçalho).
+   Só `transform` (scaleY) — nada de JS por frame, nada de animar `height`. */
+@keyframes eqBar { 0%, 100% { transform: scaleY(0.32); } 50% { transform: scaleY(1); } }
+
+.anim-rise  { animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-riseS { animation: riseS 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-pop   { animation: pop 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-sheet { animation: sheetUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-flame { animation: flame 2.6s ease-in-out infinite; }
+.anim-float { animation: floaty 7s ease-in-out infinite; }
+.anim-caret { animation: caret 1.1s steps(1) infinite; }
+.anim-new   { animation: newpulse 1.8s ease-in-out infinite; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.18s; }
+.delay-3 { animation-delay: 0.3s; }
+
+/* Prosa */
+.prose-amora {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.75;
+}
+/* Esconde scrollbar horizontal em carrosséis */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Texto rico (editor + renderizado) */
+.rich { word-break: break-word; }
+.rich:focus { outline: none; }
+.rich p { margin: 0 0 0.4em; }
+.rich h3 {
+  font-family: var(--font-display), serif;
+  font-size: 1.35em;
+  line-height: 1.2;
+  margin: 0.3em 0 0.2em;
+  color: rgb(var(--text));
+}
+.rich blockquote {
+  margin: 0.4em 0;
+  padding: 0.2em 0 0.2em 0.9em;
+  border-left: 3px solid rgb(var(--accent));
+  color: rgb(var(--text-2));
+  font-style: italic;
+}
+.rich ul, .rich ol { margin: 0.3em 0; padding-left: 1.4em; }
+.rich li { margin: 0.15em 0; }
+.rich a { color: rgb(var(--accent)); text-decoration: underline; }
+.rich b, .rich strong { font-weight: 700; }
+
+.rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: rgb(var(--text-3));
+  pointer-events: none;
+}
+
+/* Animações dos personagens de IA */
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.12); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.18); }
+}
+.char-anim .eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 4.8s ease-in-out infinite;
+}
+.char-anim .twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twinkle 3.2s ease-in-out infinite;
+}
+
+/* Impressão — só o livro sai no papel/PDF */
+@media print {
+  aside, header, nav, .ambient-bg, .print-hide { display: none !important; }
+  body { color: #1a1a2e !important; }
+  main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+  .min-h-dvh { padding-left: 0 !important; }
+  .print-area .card {
+    box-shadow: none !important;
+    border: 1px solid #e5e0ea !important;
+    background: #fff !important;
+    break-inside: avoid;
+  }
+  .print-area :where(.card, .scrap-frame)::before { display: none !important; }
+  .print-area .shadow-2xl, .print-area .shadow-lg, .print-area .shadow-sm {
+    box-shadow: none !important;
+  }
+  .print-area img {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .book-entry { page-break-inside: avoid; }
+  .book-cover { page-break-after: always; min-height: 80vh; justify-content: center; }
+  .print-area, .print-area * { color: #2a2438 !important; }
+  .print-area .text-accent, .print-area .gradient-text { color: #c2447e !important; }
+  .print-area .text-faint, .print-area .text-muted { color: #6a6280 !important; }
+}

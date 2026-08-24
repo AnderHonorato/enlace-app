@@ -1,0 +1,322 @@
+/* ── Grão de papel ─────────────────────────────────────────────────────────
+   O grão substitui manchas grandes com desfoque, que eram caras para a GPU.
+   A solução atual usa um
+   `background-image` de 3×3px que se repete (o navegador rasteriza o ladrilho
+   uma vez) deslocado em passos inteiros. `steps(4)` é deliberado — são quatro
+   quadros por ciclo, não uma interpolação contínua, então o compositor troca
+   de posição 4 vezes a cada 5s em vez de 60×/s.
+
+   Regras para quem mexer aqui:
+
+   1. Mantenha `transform` como a única propriedade animada. Animar
+      `background-position` repinta o ladrilho; animar `transform` não.
+   2. `contain` + `will-change` isolam o grão numa camada própria: ele nunca
+      invalida layout/paint do conteúdo.
+   3. O `inset: -8px` esconde as bordas que o deslocamento revelaria.
+   4. `z-index: 60` põe o grão POR CIMA do conteúdo (é papel, não fundo), mas
+      abaixo de modais e da splash. `pointer-events: none` mantém tudo clicável.
+   5. O gancho `[data-ambient="off"]` continua valendo: telas que cobrem a
+      viewport inteira (retrospectiva, splash, jogos) pausam a animação.
+   ────────────────────────────────────────────────────────────────────────── */
+.ambient-bg {
+  position: fixed;
+  inset: -8px;
+  z-index: 60;
+  pointer-events: none;
+  contain: layout paint style;
+  opacity: var(--grain-opacity, 0.5);
+  mix-blend-mode: var(--grain-blend, multiply);
+  background-image: radial-gradient(
+    rgb(var(--grain-ink) / 0.2) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 3px 3px;
+  will-change: transform;
+  animation: grainMove 5s steps(4) infinite;
+}
+/* Sobre foto de fundo o grão fica mais discreto — a foto já traz textura. */
+.has-bg-photo .ambient-bg { opacity: calc(var(--grain-opacity, 0.5) * 0.45); }
+
+[data-ambient="off"] .ambient-bg { animation-play-state: paused; }
+
+/* ── Papel de parede ── */
+body.has-bg-photo::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: inherit;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+@keyframes grainMove {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 1px); }
+  50%  { transform: translate(1px, -2px); }
+  75%  { transform: translate(-1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-2));
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--text-3)); background-clip: padding-box; }
+
+::selection { background: rgb(var(--accent) / 0.22); color: rgb(var(--text)); }
+
+/* ---- Utilitários ----
+   `.glass` sobreviveu ao redesign só como nome: o que ele pinta agora é
+   papel opaco com um véu mínimo, porque barras fixas ainda precisam
+   deixar o conteúdo passar por baixo sem virar vidro roxo. */
+.glass {
+  background: rgb(var(--bg-2) / 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgb(var(--border));
+}
+
+/* O acento é único, então o "gradiente" usa tinta chapada. O nome fica para
+   preservar os
+   ~40 pontos de uso espalhados pelos componentes. */
+.gradient-text {
+  color: rgb(var(--accent-ink));
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+}
+
+/* Esta classe usa tinta chapada do acento. O nome fica porque são ~39
+   arquivos usando, quase todos em botão pequeno e barra de progresso, onde um
+   preenchimento de acento é legítimo. Chapado em vez de degradê já mata a
+   aparência antiga sem mexer em componente nenhum; e mantendo o acento (em vez
+   de trocar por tinta) o `text-white` que acompanha continua legível nos dois
+   temas. Áreas grandes não devem usar esta classe — ver DESIGN.md. */
+.accent-gradient {
+  background: rgb(var(--accent));
+}
+
+.card,
+.scrap-frame {
+  /*
+   * A moldura é um SVG transparente, não uma imagem raster. O mesmo arquivo
+   * veste cards antigos e novos sem mudar o DOM, o tamanho ou a área de toque.
+   * Variantes trocam apenas `--scrap-frame-art`, portanto não acrescentam JS.
+   */
+  --scrap-frame-art: url("/papelaria/moldura-card.svg");
+  --scrap-frame-opacity: 0.78;
+  position: relative;
+  isolation: isolate;
+}
+
+.card {
+  background: rgb(var(--surface));
+  border: 1px solid rgb(var(--border-2) / 0.62);
+  border-radius: 5px;
+  box-shadow:
+    0 1px 0 rgb(var(--shadow-color) / 0.03),
+    0 22px 40px -30px rgb(var(--shadow-color) / 0.5);
+}
+
+/* O traço fica em pseudo-elemento para não roubar espaço do conteúdo e não
+   interferir em clique, foco, seleção de texto ou overflow dos componentes. */
+:where(.card, .scrap-frame)::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 3;
+  border-radius: inherit;
+  background-image: var(--scrap-frame-art);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  opacity: var(--scrap-frame-opacity);
+  pointer-events: none;
+}
+
+.scrap-frame-botanical {
+  --scrap-frame-art: url("/papelaria/moldura-botanica.svg");
+  --scrap-frame-opacity: 0.88;
+}
+
+.scrap-frame-tape {
+  --scrap-frame-art: url("/papelaria/moldura-fita.svg");
+  --scrap-frame-opacity: 0.84;
+}
+
+/* Em áreas muito pequenas a moldura continua presente, mas vira só um traço:
+   os ornamentos não competem com rótulos ou números. */
+.scrap-frame-quiet { --scrap-frame-opacity: 0.52; }
+
+/* Foco acompanha a silhueta do papel sem ser escondido pela decoração. */
+:where(a, button).scrap-frame:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 3px;
+}
+
+.hairline { border-color: rgb(var(--border)); }
+
+.focus-ring:focus-visible,
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ── Vocabulário editorial do Enlace ──────────────────────────────────────
+   Estas quatro classes carregam a identidade do redesign. Preferir elas a
+   remontar o mesmo conjunto de utilitários Tailwind em cada componente. */
+
+/* Etiqueta em versalete acima de todo título de seção. */
+.kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgb(var(--text-3));
+  line-height: 1.2;
+}
+.kicker-sm { font-size: 10px; letter-spacing: 0.2em; }
+
+/* Título de display: Fraunces com o espaçamento fechado do mockup. */
+.display {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.display-num {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 0.92;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Régua fina que separa blocos — cresce da esquerda quando entra. */
+.rule {
+  height: 1px;
+  background: rgb(var(--border-2));
+  transform-origin: left;
+}
+.rule-grow { animation: growX 0.7s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Pílula/tag de papel. Combine com `.tag-on` para o estado ativo. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgb(var(--accent-ink));
+  background: rgb(var(--accent) / 0.09);
+  border: 1px solid transparent;
+}
+.tag-off {
+  color: rgb(var(--text-2));
+  background: transparent;
+  border-color: rgb(var(--border-2));
+}
+.tag-on { border-color: rgb(var(--accent)); }
+
+/* Equalizador da tira "tocando agora" — três traços que só sobem e descem
+   em `scaleY`, defasados. Aparece apenas enquanto ESTE aparelho está
+   tocando a faixa (a seleção é do casal, o som é de cada um). */
+.radio-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 9px; }
+.radio-eq span {
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: rgb(var(--accent));
+  transform-origin: bottom;
+  animation: eqBar 0.9s ease-in-out infinite;
+}
+.radio-eq span:nth-child(2) { animation-delay: 0.15s; }
+.radio-eq span:nth-child(3) { animation-delay: 0.3s; }
+
+/* Brilho que atravessa o botão primário. */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 36px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  animation: sheen 4.5s 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Linha do tempo — a régua vertical do gutter de datas. */
+.timeline-line { background: rgb(var(--border-2)); }
+
+/* O ponto que marca cada entrada na régua. */
+.timeline-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgb(var(--border-2));
+  box-shadow: 0 0 0 4px rgb(var(--bg));
+}
+.timeline-dot-on { background: rgb(var(--accent)); }
+
+/* ── Superfícies com forma ────────────────────────────────────────────────
+   Identidade não se faz só de cor e tipo — se faz de forma. Estas classes dão
+   silhueta e textura ao papel; as formas desenhadas (borda rasgada, selo,
+   carimbo, fita, floreio) moram em src/componentes/Papelaria.tsx. */
+
+/* Papel pautado. As linhas saem de um gradiente repetido, não de um SVG de
+   fundo: o navegador resolve numa passada, a cor vem do token (então o tema
+   acompanha sozinho) e não custa uma requisição. `background-size` define a
+   entrelinha — mudar o espaçamento é mudar um número só. */
+.pautado {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(1.72em - 1px),
+    rgb(var(--border) / 0.55) calc(1.72em - 1px),
+    rgb(var(--border) / 0.55) 1.72em
+  );
+  background-position: 0 0.34em;
+}
+
+/* Papel quadriculado — para painéis de dados (metas, gráficos, placar). */
+.quadriculado {
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0, transparent 15px, rgb(var(--border) / 0.4) 15px, rgb(var(--border) / 0.4) 16px),
+    repeating-linear-gradient(to right, transparent 0, transparent 15px, rgb(var(--border) / 0.4) 15px, rgb(var(--border) / 0.4) 16px);
+}
+
+/* Cartão com o canto recortado — silhueta de ficha de arquivo. É a versão
+   barata da <Folha> do React: só a silhueta, sem a sombra da dobra. */
+.ficha {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+
+/* Furos de fichário na margem esquerda. */
+.furos { position: relative; }
+.furos::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 50% 50%, rgb(var(--bg)) 4.5px, transparent 4.6px);
+  background-size: 9px 64px;
+  background-repeat: repeat-y;
+}

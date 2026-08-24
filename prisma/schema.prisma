@@ -1,0 +1,616 @@
+// Amora — schema do banco de dados
+// Dev: SQLite (roda sem configuração). Produção: troque provider p/ "postgresql".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String
+  displayName  String?
+  passwordHash String
+
+  // aparência do perfil
+  avatarColor String    @default("#E5679B")
+  avatarUrl   String?
+  bio         String?
+  birthday    DateTime?
+
+  // localização em tempo real
+  shareLocation    Boolean   @default(false)
+  liveLat          Float?
+  liveLng          Float?
+  locationUpdatedAt DateTime?
+
+  // preferências
+  theme      String @default("aurora") // paleta escura: aurora|meianoite|pordosol|preto
+  themeLight String @default("claro") // paleta clara: claro|branco
+  themeMode  String @default("auto") // auto | light | dark
+  accent     String @default("rose")
+
+  // privacidade
+  pinHash   String? // PIN de 4-8 dígitos para abrir o app
+  lockedKey String? // senha extra p/ memórias trancadas (hash)
+
+  // gamificação
+  points        Int     @default(0)
+  streak        Int     @default(0)
+  bestStreak    Int     @default(0)
+  lastActiveDay String? // "YYYY-MM-DD" do último dia com atividade
+  // escudo de sequência: perdoa 1 dia faltado. Ganha 1 por mês (limite 2).
+  streakShields Int     @default(1)
+  shieldMonth   String? // "YYYY-MM" do último refil de escudo
+
+  // notificações
+  lastNotificationSeenAt DateTime?
+  // feed: tudo publicado depois disto é "novo" para este usuário
+  lastFeedSeenAt         DateTime?
+
+  // configurações de IA (chaves criptografadas em repouso)
+  aiProvider     String  @default("openai") // openai | deepseek | anthropic
+  aiModel        String?
+  aiKeyOpenai    String?
+  aiKeyDeepseek  String?
+  aiKeyAnthropic String?
+
+  // relacionamento (casal)
+  coupleId String?
+  couple   Couple? @relation("CoupleMembers", fields: [coupleId], references: [id], onDelete: SetNull)
+
+  entries      Entry[]
+  comments     Comment[]
+  reactions    Reaction[]
+  commentLikes CommentLike[]
+  gameScores   GameScore[]
+  chatMessages ChatMessage[]
+  messagesSent Message[]
+  pushSubs     PushSub[]
+  tasks        TaskItem[]
+
+  gameSessionsHosted GameSession[] @relation("GameSessionHost")
+  gameSessionsGuest  GameSession[] @relation("GameSessionGuest")
+
+  rabiscaRoomsHosted RabiscaRoom[]   @relation("RabiscaHost")
+  rabiscaPlayers     RabiscaPlayer[]
+  rabiscaStrokes     RabiscaStroke[] @relation("RabiscaStrokeAuthor")
+  rabiscaGuesses     RabiscaGuess[]  @relation("RabiscaGuessAuthor")
+
+  notifications Notification[] @relation("NotificationRecipient")
+  actedOn       Notification[] @relation("NotificationActor")
+
+  secretsSent     Secret[] @relation("SecretSender")
+  secretsReceived Secret[] @relation("SecretRecipient")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Notificação in-app. Uma linha por destinatário e por evento.
+/// `url` é o destino ao tocar (deep link para a origem do evento).
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  // quem causou o evento (null = sistema/IA)
+  actorId String?
+  actor   User?   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  kind  String // entry | reaction | comment | comment_like | capsule | capsule_open | task | task_comment | goal | wish | summary | couple | chat
+  title String
+  body  String @default("")
+  url   String @default("/app")
+
+  // referência à entidade de origem (memória, tarefa, cápsula…)
+  entityType String?
+  entityId   String?
+
+  emoji  String?
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+model Couple {
+  id          String    @id @default(cuid())
+  name        String?
+  inviteCode  String    @unique
+  anniversary DateTime? // início do namoro
+  metDate     DateTime? // quando se conheceram
+  howWeMet    String? // a história de como se conheceram
+  typing      String    @default("{}") // {userId: timestamp} p/ "digitando…"
+  mascotName  String? // nome do bichinho do casal
+  nowPlaying  String    @default("{}") // {trackId, trackName, artist, image, startedBy, at} — rádio compartilhada (seleção do casal; play/pause continua local)
+  createdAt   DateTime  @default(now())
+
+  members    User[]         @relation("CoupleMembers")
+  entries    Entry[]
+  messages   Message[]
+  summaries  DailySummary[]
+  goals      Goal[]
+  wishes     Wish[]
+  capsules   Capsule[]
+  taskLists  TaskList[]
+  retroMusic RetroMusic[]
+  wordleGame WordleGame?
+  gameScores GameScore[]
+  gameSessions GameSession[]
+}
+
+/// Sessão de um jogo em dupla — o coração do sistema de "jogos do casal".
+///
+/// Todo jogo multiplayer (novo ou migrado) passa por aqui: um convite nasce
+/// `pending`, vira `active` quando o parceiro aceita, e termina em `finished`
+/// (partida concluída OU alguém saiu OU ninguém deu sinal de vida por tempo
+/// demais) ou `abandoned` (convite recusado ou expirado sem resposta).
+///
+/// `state` é o "tabuleiro" — um JSON livre, com o formato que cada jogo
+/// (`game`) decide. `scores` é só o placar DESSA sessão (zera a cada partida
+/// nova); pontos ganhos aqui também viram `GameScore` + XP permanentes via
+/// `awardPoints`, então o placar geral da Central de Jogos nunca fica de fora.
+/// `presence` guarda o último "sinal de vida" (poll) de cada jogador — é o
+/// que permite perceber quando alguém sumiu (ver `lib/gameSession.ts`).
+model GameSession {
+  id       String @id @default(cuid())
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  game   String // slug: "tictactoe" | "verdade" | "complete" | "filmeemoji" | "memoria" | "desenho"
+  status String @default("pending") // pending | active | finished | abandoned
+
+  hostId  String // quem convidou
+  host    User   @relation("GameSessionHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guestId String // quem foi convidado (o parceiro, sempre — casal é a dois)
+  guest   User   @relation("GameSessionGuest", fields: [guestId], references: [id], onDelete: Cascade)
+
+  turnUserId String? // de quem é a vez agora; null = os dois jogam ao mesmo tempo
+
+  scores   String @default("{}") // JSON: {[userId]: pontosNestaSessao}
+  state    String @default("{}") // JSON livre, formato definido por cada jogo
+  presence String @default("{}") // JSON: {[userId]: isoTimestamp do último poll}
+
+  endedReason String? // completed | left | declined | timeout | expired
+  endedById   String? // quem causou o fim (saiu, recusou), quando aplicável
+
+  acceptedAt DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([coupleId, status])
+  @@index([hostId, status])
+  @@index([guestId, status])
+}
+
+// Cada ponto ganho num jogo vira uma linha aqui — nunca uma contagem que é
+// sobrescrita. É de propósito: assim a pontuação do dia, da semana e do mês
+// são só recortes por data da mesma história, e nada nunca "reseta". Virar o
+// mês não apaga nada; só muda a janela que a tela olha.
+//
+// `dia` guarda a data no fuso de Brasília ("AAAA-MM-DD"). Sem isso, a
+// pontuação do dia viraria às 21h, quando o dia UTC muda.
+model GameScore {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coupleId String?
+  couple   Couple? @relation(fields: [coupleId], references: [id], onDelete: SetNull)
+
+  game   String // chave do jogo que deu os pontos
+  points Int
+  dia    String // "AAAA-MM-DD" no fuso de Brasília
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, dia])
+  @@index([coupleId, dia])
+}
+
+/// Sala social do Rabisca. Diferente de GameSession (sempre limitada ao
+/// casal), uma sala aceita qualquer usuário autenticado que possua o código.
+/// Isso mantém a autorização explícita e permite jogar com amigos sem expor
+/// o restante do diário do casal.
+model RabiscaRoom {
+  id     String @id @default(cuid())
+  code   String @unique
+  title  String @default("Sala de desenho")
+  theme  String @default("cotidiano")
+  mode   String @default("classico") // classico | rapido | sem_borracha
+  status String @default("waiting") // waiting | active | paused | roundEnd | finished
+
+  hostId String
+  host   User   @relation("RabiscaHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  round        Int     @default(0)
+  totalRounds  Int     @default(5)
+  roundSeconds Int     @default(80)
+  drawerId     String?
+  word         String?
+  result       String  @default("{}") // JSON: vencedor e palavra da última rodada
+
+  roundStartedAt DateTime?
+  pausedAt       DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  players RabiscaPlayer[]
+  strokes RabiscaStroke[]
+  guesses RabiscaGuess[]
+
+  @@index([status, updatedAt])
+  @@index([hostId, status])
+}
+
+model RabiscaPlayer {
+  id     String      @id @default(cuid())
+  roomId String
+  room   RabiscaRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId String
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  score      Int       @default(0)
+  online     Boolean   @default(true)
+  lastSeenAt DateTime  @default(now())
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime?
+
+  @@unique([roomId, userId])
+  @@index([roomId, score])
+  @@index([userId, leftAt])
+}
+
+model RabiscaStroke {
+  id       String      @id @default(cuid())
+  roomId   String
+  room     RabiscaRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User        @relation("RabiscaStrokeAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  round  Int
+  points String // JSON: coordenadas normalizadas [0..1]
+  color  String
+  width  Int
+
+  createdAt DateTime @default(now())
+
+  @@index([roomId, round, createdAt])
+}
+
+model RabiscaGuess {
+  id       String      @id @default(cuid())
+  roomId   String
+  room     RabiscaRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User        @relation("RabiscaGuessAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  round      Int
+  text       String
+  similarity Int
+  correct    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([roomId, round, createdAt])
+}
+
+model Goal {
+  id        String   @id @default(cuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  createdBy String
+  title     String
+  emoji     String   @default("🎯")
+  steps     String   @default("[]") // JSON [{text, done}]
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([coupleId])
+}
+
+model Wish {
+  id        String   @id @default(cuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  createdBy String
+  title     String
+  kind      String   @default("date") // date | lugar | sonho | outro
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([coupleId])
+}
+
+model Capsule {
+  id        String    @id @default(cuid())
+  coupleId  String
+  couple    Couple    @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  authorId  String
+  title     String?
+  content   String
+  openAt    DateTime
+  openedAt  DateTime?
+  vessel    String    @default("bottle") // bottle | globe | chest | bear | box
+  status    String    @default("SEALED") // SEALED | OPENED
+  createdAt DateTime  @default(now())
+
+  items CapsuleItem[]
+
+  @@index([coupleId, openAt])
+  @@index([coupleId, status])
+}
+
+model CapsuleItem {
+  id        String   @id @default(cuid())
+  capsuleId String
+  capsule   Capsule  @relation(fields: [capsuleId], references: [id], onDelete: Cascade)
+  authorId  String
+  message   String
+  mood      String?
+  image     String?
+  createdAt DateTime @default(now())
+
+  @@index([capsuleId])
+}
+
+model PushSub {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Message {
+  id        String    @id @default(cuid())
+  coupleId  String
+  couple    Couple    @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  readAt    DateTime? // recibo de leitura
+  createdAt DateTime  @default(now())
+
+  @@index([coupleId, createdAt])
+  @@index([coupleId, readAt])
+}
+
+/// Arquivo enviado no chat. É usado quando não existe um bucket Supabase
+/// configurado, evitando depender do disco temporário de servidores serverless.
+model ChatUpload {
+  id         String   @id @default(cuid())
+  coupleId   String
+  uploaderId String
+  name       String
+  mime       String
+  size       Int
+  data       Bytes
+  createdAt  DateTime @default(now())
+
+  @@index([coupleId, createdAt])
+}
+
+model TaskList {
+  id        String   @id @default(cuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks TaskItem[]
+
+  @@index([coupleId])
+}
+
+model TaskItem {
+  id        String   @id @default(cuid())
+  listId    String
+  list      TaskList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  done      Boolean  @default(false)
+  images    String   @default("[]") // JSON: array de data URLs
+  files     String   @default("[]") // JSON: [{name, url, size}]
+  comments  String   @default("[]") // JSON: [{id, authorId, authorName, authorAvatar, text, createdAt}]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([listId, createdAt])
+}
+
+model DailySummary {
+  id        String   @id @default(cuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  day       String // chave do período: "YYYY-MM-DD" | "YYYY-Sww" | "YYYY-MM"
+  period    String   @default("day") // day | week | month
+  vibe      String // positive | neutral | attention
+  title     String
+  message   String
+  tip       String?
+  createdAt DateTime @default(now())
+
+  @@unique([coupleId, day])
+  @@index([coupleId, createdAt])
+}
+
+model Entry {
+  id       String  @id @default(cuid())
+  authorId String
+  author   User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  coupleId String?
+  couple   Couple? @relation(fields: [coupleId], references: [id], onDelete: SetNull)
+
+  title      String?
+  content    String   @default("")
+  mood       String? // chave de humor (emoji)
+  weather    String?
+  visibility String   @default("shared") // shared | private
+  insight    String? // análise curta da IA
+  points     Int      @default(0) // pontos que esta memória rendeu
+  favorite   Boolean  @default(false) // memória especial do casal
+  locked     Boolean  @default(false) // exige senha extra para abrir
+  place      String? // nome do lugar
+  lat        Float?
+  lng        Float?
+  entryDate  DateTime @default(now())
+  tags       String   @default("[]") // JSON
+
+  attachments Attachment[]
+  comments    Comment[]
+  reactions   Reaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coupleId, entryDate])
+  @@index([authorId, entryDate])
+  @@index([coupleId, visibility, entryDate, createdAt])
+  @@index([authorId, entryDate, createdAt])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  entryId   String
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  url       String
+  type      String   @default("image") // image | audio | video
+  caption   String?
+  duration  Int? // segundos (áudio/vídeo)
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  @@index([entryId, type])
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  entryId     String
+  entry       Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  // authorId é nulo quando o comentário é da IA (aiCharacter definido).
+  authorId    String?
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  aiCharacter String? // slug do personagem de IA, quando o comentário é da IA
+  content     String   @default("")
+  images      String   @default("[]") // JSON: array de fotos (data URLs)
+  createdAt   DateTime @default(now())
+
+  likes CommentLike[]
+
+  @@index([entryId])
+}
+
+/// Curtida em um comentário.
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String   @default("❤️")
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  entryId   String
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String   @default("❤️")
+  createdAt DateTime @default(now())
+
+  @@unique([entryId, userId, emoji])
+  @@index([entryId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character String // slug do personagem
+  role      String // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, character, createdAt])
+}
+
+/// Segredo/surpresa entre o casal.
+/// Um usuário cumpre um "evento do dia" e envia um segredo; o parceiro recebe
+/// um modal animado que revela o conteúdo ao abrir.
+model Secret {
+  id          String @id @default(cuid())
+  coupleId    String
+  senderId    String
+  sender      User   @relation("SecretSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User   @relation("SecretRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  // qual evento originou o segredo (id do catálogo) e o prompt mostrado
+  eventId String?
+  kind    String  @default("text") // text | photo | mixed
+  prompt  String  @default("") // o desafio que gerou ("Envie uma foto sem dizer nada")
+
+  message String  @default("")
+  image   String? // data URL (opcional)
+
+  openedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([recipientId, openedAt])
+  @@index([coupleId, createdAt])
+}
+
+model RetroMusic {
+  id        String   @id @default(cuid())
+  coupleId  String
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  year      Int
+  semester  Int // 1 ou 2
+  slideKey  String? // null = padrão/geral, ou key do slide específico
+  trackId   String
+  trackName String
+  artist    String
+  image     String?
+  createdAt DateTime @default(now())
+
+  @@index([coupleId, year, semester])
+}
+
+model WordleGame {
+  id         String   @id @default(cuid())
+  coupleId   String   @unique
+  couple     Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  word       String
+  category   String
+  emoji      String
+  locked     Boolean  @default(false)
+  lockedBy   String?  // userId de quem bloqueou
+  guesses    String   @default("[]") // JSON: {userId, guess, states}[]
+  currentTurn String  @default("") // userId da vez
+  skipReqBy  String?  // userId que pediu pra pular
+  timerEndsAt DateTime? // quando o timer do jogador atual expira
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

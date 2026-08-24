@@ -1,0 +1,17 @@
+{
+  "name": "Enlace — o diário de um casal",
+  "short_name": "Enlace",
+  "description": "O diário de vocês dois, em uma linha do tempo. Comente, curta, evolua o nível de apaixonados e converse com personagens de IA.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F1E8",
+  "theme_color": "#F6F1E8",
+  "lang": "pt-BR",
+  "categories": ["lifestyle", "social", "productivity"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

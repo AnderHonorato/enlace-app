@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" fill="none">
+  <!-- Moldura original do Enlace: traços irregulares de nanquim, carmim e ocre. -->
+  <path d="M22 36C155 27 300 35 438 29C594 22 770 33 976 25C969 169 979 316 970 575C738 568 538 580 327 570C204 565 103 576 25 566C32 407 20 234 22 36Z" stroke="#28314F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".68" vector-effect="non-scaling-stroke"/>
+  <path d="M31 43C205 35 350 45 501 36C677 27 830 43 964 34M963 35C957 188 968 386 960 563M958 562C739 555 513 568 329 559C196 553 102 565 35 555M34 554C41 389 28 209 31 43" stroke="#B17B4A" stroke-width="2.3" stroke-linecap="round" stroke-dasharray="152 13 61 9" opacity=".55" vector-effect="non-scaling-stroke"/>
+  <path d="M26 32C86 40 141 22 205 33" stroke="#A33152" stroke-width="10" stroke-linecap="round" opacity=".72" vector-effect="non-scaling-stroke"/>
+  <path d="M804 570C859 560 917 577 973 561" stroke="#A33152" stroke-width="8" stroke-linecap="round" opacity=".58" vector-effect="non-scaling-stroke"/>
+  <g fill="#A33152" opacity=".72">
+    <circle cx="50" cy="58" r="4"/>
+    <circle cx="65" cy="50" r="2.5"/>
+    <circle cx="946" cy="535" r="3.5"/>
+  </g>
+  <g fill="#28314F" opacity=".58">
+    <circle cx="84" cy="48" r="2.5"/>
+    <circle cx="934" cy="550" r="2"/>
+  </g>
+</svg>

@@ -1,0 +1,317 @@
+import { FlaskConical } from "lucide-react";
+import type { PacoteQuiz } from "./tipos";
+
+export const CIENCIA: PacoteQuiz = {
+  key: "ciencia",
+  titulo: "",
+  destaque: "Laboratório",
+  desc: "Corpo humano, animais, química e dinossauros",
+  icone: FlaskConical,
+  accent: "accent",
+  perguntas: [
+    // ── Múltipla escolha ────────────────────────────────────────────────────
+    {
+      tipo: "escolha",
+      enunciado: "Qual é o maior órgão do corpo humano?",
+      opcoes: ["A pele", "O fígado", "O intestino", "O pulmão"],
+      correta: 0,
+      explicacao: "Um adulto carrega cerca de 2 m² de pele, pesando de 4 a 5 kg.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quantos ossos tem o corpo de um adulto?",
+      opcoes: ["206", "300", "180", "250"],
+      correta: 0,
+      explicacao: "Bebês nascem com cerca de 300; muitos se fundem durante o crescimento.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual gás as plantas absorvem para fazer fotossíntese?",
+      opcoes: ["Gás carbônico", "Oxigênio", "Nitrogênio", "Hidrogênio"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      simbolo: "💧",
+      enunciado: "Qual é a fórmula química da água?",
+      opcoes: ["H₂O", "CO₂", "O₂", "NaCl"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      simbolo: "🐙",
+      enunciado: "Quantos corações tem um polvo?",
+      opcoes: ["3", "1", "2", "5"],
+      correta: 0,
+      explicacao: "Dois bombeiam sangue para as brânquias e um para o resto do corpo.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é o maior animal que já existiu no planeta?",
+      opcoes: ["Baleia-azul", "Tiranossauro rex", "Elefante-africano", "Braquiossauro"],
+      correta: 0,
+      explicacao: "Pode passar de 30 metros e 150 toneladas — maior que qualquer dinossauro conhecido.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual metal é líquido à temperatura ambiente?",
+      opcoes: ["Mercúrio", "Chumbo", "Alumínio", "Estanho"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem formulou a teoria da evolução por seleção natural?",
+      opcoes: ["Charles Darwin", "Gregor Mendel", "Louis Pasteur", "Isaac Newton"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é a unidade básica da vida?",
+      opcoes: ["A célula", "O átomo", "A molécula", "O tecido"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "O que a escala Richter mede?",
+      opcoes: ["Terremotos", "Temperatura", "Vento", "Radiação"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é, aproximadamente, a velocidade da luz no vácuo?",
+      opcoes: ["300.000 km/s", "300.000 km/h", "30.000 km/s", "3 milhões de km/s"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é o osso mais longo do corpo humano?",
+      opcoes: ["Fêmur", "Úmero", "Tíbia", "Coluna"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é o elemento químico mais abundante do universo?",
+      opcoes: ["Hidrogênio", "Oxigênio", "Carbono", "Hélio"],
+      correta: 0,
+      explicacao: "Cerca de 75% de toda a matéria comum do universo é hidrogênio.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem propôs a teoria da relatividade?",
+      opcoes: ["Albert Einstein", "Isaac Newton", "Stephen Hawking", "Niels Bohr"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      simbolo: "🦖",
+      enunciado: "Qual grupo de animais atuais descende dos dinossauros?",
+      opcoes: ["As aves", "Os répteis", "Os anfíbios", "Os mamíferos"],
+      correta: 0,
+      explicacao: "As aves são dinossauros terópodes — parentes diretos do grupo do tiranossauro.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quantas câmaras tem o coração humano?",
+      opcoes: ["4", "2", "3", "6"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual tipo sanguíneo é considerado doador universal?",
+      opcoes: ["O negativo", "AB positivo", "A positivo", "B negativo"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual parte da célula guarda o DNA?",
+      opcoes: ["O núcleo", "A mitocôndria", "O ribossomo", "A membrana"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual valor de pH indica uma substância neutra?",
+      opcoes: ["7", "0", "10", "14"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "O que a insulina controla no corpo?",
+      opcoes: [
+        "O açúcar no sangue",
+        "A pressão arterial",
+        "A temperatura corporal",
+        "O ritmo do sono",
+      ],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Há quanto tempo os dinossauros não-avianos foram extintos?",
+      opcoes: [
+        "Cerca de 66 milhões de anos",
+        "Cerca de 6 milhões de anos",
+        "Cerca de 200 milhões de anos",
+        "Cerca de 500 mil anos",
+      ],
+      correta: 0,
+      explicacao: "O impacto de um asteroide na região de Chicxulub, no México, encerrou o período Cretáceo.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é o menor osso do corpo humano?",
+      opcoes: ["O estribo, no ouvido", "A falange do mindinho", "O osso nasal", "A rótula"],
+      correta: 0,
+      explicacao: "Tem cerca de 3 milímetros e ajuda a transmitir o som para o ouvido interno.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual órgão produz a bile?",
+      opcoes: ["O fígado", "A vesícula", "O pâncreas", "O estômago"],
+      correta: 0,
+      explicacao: "A vesícula apenas armazena e libera a bile produzida pelo fígado.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual é o animal terrestre mais rápido?",
+      opcoes: ["Guepardo", "Cavalo", "Avestruz", "Antílope"],
+      correta: 0,
+      explicacao: "Chega a 110 km/h, mas só aguenta esse ritmo por alguns segundos.",
+    },
+
+    // ── Mito ou Fato ────────────────────────────────────────────────────────
+    {
+      tipo: "vf",
+      afirmacao: "Os seres humanos usam apenas 10% do cérebro.",
+      verdadeiro: false,
+      explicacao: "Mito antigo. Exames de imagem mostram atividade em praticamente todas as áreas ao longo de um dia.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "O sangue é azul enquanto está dentro das veias.",
+      verdadeiro: false,
+      explicacao: "O sangue é sempre vermelho. As veias parecem azuladas por causa de como a pele espalha a luz.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Um raio nunca cai duas vezes no mesmo lugar.",
+      verdadeiro: false,
+      explicacao: "Cai, sim — e com frequência. O Empire State é atingido dezenas de vezes por ano.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "O mel praticamente não estraga.",
+      verdadeiro: true,
+      explicacao: "Pouquíssima água e pH ácido impedem microrganismos de crescer. Já se achou mel comestível em tumbas egípcias.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Os tubarões existem há mais tempo que as árvores.",
+      verdadeiro: true,
+      explicacao: "Tubarões surgiram há cerca de 400 milhões de anos; as primeiras árvores, há cerca de 350 milhões.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "A água ferve a 100 °C em qualquer lugar do planeta.",
+      verdadeiro: false,
+      explicacao: "Depende da pressão. No alto de uma montanha ela ferve bem abaixo de 100 °C — e o macarrão demora mais a cozinhar.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "O vidro é um líquido que escorre muito lentamente.",
+      verdadeiro: false,
+      explicacao: "É um sólido amorfo. Vitrais medievais mais grossos embaixo são resultado do método de fabricação da época.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Os polvos têm sangue azul.",
+      verdadeiro: true,
+      explicacao: "O transporte de oxigênio é feito por hemocianina, à base de cobre, e não por hemoglobina, à base de ferro.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "As baleias são mamíferos.",
+      verdadeiro: true,
+      explicacao: "Respiram ar, são de sangue quente e amamentam os filhotes.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "O coração de um beija-flor pode bater mais de mil vezes por minuto.",
+      verdadeiro: true,
+      explicacao: "Em pleno voo chega perto de 1.200 batimentos por minuto. Em repouso, cai bastante.",
+    },
+
+    // ── Ordenar ─────────────────────────────────────────────────────────────
+    {
+      tipo: "ordem",
+      enunciado: "Coloque do MENOR para o MAIOR.",
+      dicaOrdem: "menor primeiro",
+      itens: ["Átomo", "Molécula", "Célula", "Órgão"],
+    },
+    {
+      tipo: "ordem",
+      enunciado: "Coloque os eventos da história da vida em ordem CRONOLÓGICA.",
+      dicaOrdem: "mais antigo primeiro",
+      itens: [
+        "Formação da Terra",
+        "Primeiros dinossauros",
+        "Extinção dos dinossauros",
+        "Primeiros humanos",
+      ],
+      explicacao: "4,5 bilhões · 230 milhões · 66 milhões · 300 mil anos atrás.",
+    },
+    {
+      tipo: "ordem",
+      enunciado: "Coloque os elementos do MAIS LEVE para o MAIS PESADO.",
+      dicaOrdem: "mais leve primeiro",
+      itens: ["Hidrogênio", "Hélio", "Carbono", "Ferro"],
+    },
+    {
+      tipo: "ordem",
+      enunciado: "Coloque as etapas do método científico na ordem correta.",
+      dicaOrdem: "primeira etapa primeiro",
+      itens: ["Observação", "Hipótese", "Experimento", "Conclusão"],
+    },
+
+    // ── Pistas ──────────────────────────────────────────────────────────────
+    {
+      tipo: "pistas",
+      pistas: [
+        "Sou o elemento mais abundante do universo.",
+        "Tenho apenas um próton.",
+        "Junto com o oxigênio, formo a água.",
+      ],
+      opcoes: ["Hidrogênio", "Hélio", "Oxigênio", "Carbono"],
+      correta: 0,
+    },
+    {
+      tipo: "pistas",
+      pistas: [
+        "Tenho oito braços e mudo de cor.",
+        "Meu sangue é azul.",
+        "Tenho três corações.",
+      ],
+      opcoes: ["Polvo", "Lula", "Água-viva", "Estrela-do-mar"],
+      correta: 0,
+    },
+    {
+      tipo: "pistas",
+      pistas: [
+        "Passei cinco anos viajando a bordo de um navio.",
+        "Visitei as Ilhas Galápagos e reparei nos bicos dos pássaros.",
+        "Publiquei minha teoria em 1859.",
+      ],
+      opcoes: ["Charles Darwin", "Alfred Wallace", "Carl Linnaeus", "Louis Pasteur"],
+      correta: 0,
+    },
+    {
+      tipo: "pistas",
+      pistas: [
+        "Sou o maior animal que já existiu.",
+        "Meu coração pesa quase o mesmo que um carro pequeno.",
+        "Me alimento de krill, um dos menores animais do mar.",
+      ],
+      opcoes: ["Baleia-azul", "Cachalote", "Tubarão-baleia", "Orca"],
+      correta: 0,
+    },
+  ],
+};

@@ -1,0 +1,167 @@
+/* =========================================================
+   ENLACE — "PAPEL E TINTA"
+   Tokens em tripletos RGB para funcionar com rgb(var() / alpha)
+   Troca de tema por [data-theme], acento por [data-accent].
+
+   A interface usa papel impresso — bege quente, tinta quase-preta,
+   uma cor de acento e cantos de 3 a 6px.
+   A especificação completa mora em DESIGN.md.
+
+   `--ink-*` são os valores crus usados por sombras e pelo grão,
+   que precisam da cor da tinta independente do tema.
+   ========================================================= */
+
+/* ── Claro: papel (padrão) ───────────────────────────────── */
+:root,
+[data-theme="papel"] {
+  --bg: 246 241 232;        /* #F6F1E8 — a página */
+  --bg-2: 239 231 218;      /* #EFE7DA — trilho, nav, barras */
+  --surface: 255 253 249;   /* #FFFDF9 — a carta */
+  --surface-2: 251 247 238; /* #FBF7EE — carta rebaixada */
+  --border: 229 219 201;    /* #E5DBC9 — régua fina */
+  --border-2: 224 213 193;  /* #E0D5C1 — régua forte */
+  --text: 23 20 15;         /* #17140F — tinta */
+  --text-2: 87 80 63;       /* #57503F — tinta diluída */
+  --text-3: 162 152 138;    /* #A2988A — lápis claro */
+  --success: 58 141 106;
+  --warning: 154 90 15;
+  --danger: 176 45 58;
+  /* Ouro (#B8862F) — favorito, destaque, nível lendário. Existe separado de
+     `--warning` de propósito: aviso e celebração são coisas diferentes, e
+     enquanto os dois dividiam o mesmo token não dava para escurecer um alerta
+     sem apagar uma estrela de favorito. Só os temas escuros o abrem; sepia e
+     alvo herdam este valor do `:root`. */
+  --gold: 184 134 47;
+  --shadow-color: 23 20 15;
+  --ink: 23 20 15;
+  --grain-blend: multiply;
+  --grain-ink: 23 20 15;
+  --grain-opacity: 0.5;
+}
+/* Papel envelhecido — mais canvas, menos alvura. */
+[data-theme="sepia"] {
+  --bg: 237 228 213;
+  --bg-2: 230 219 201;
+  --surface: 248 242 231;
+  --surface-2: 243 236 223;
+  --border: 216 204 182;
+  --border-2: 206 192 168;
+  --text: 34 28 20;
+  --text-2: 95 85 66;
+  --text-3: 150 138 120;
+  --success: 58 141 106;
+  --warning: 154 90 15;
+  --danger: 176 45 58;
+  --shadow-color: 34 28 20;
+  --ink: 34 28 20;
+  --grain-blend: multiply;
+  --grain-ink: 34 28 20;
+  --grain-opacity: 0.55;
+}
+
+/* Papel alvo — para quem quer o mínimo de cor. */
+[data-theme="alvo"] {
+  --bg: 250 249 246;
+  --bg-2: 244 242 237;
+  --surface: 255 255 255;
+  --surface-2: 249 248 244;
+  --border: 231 228 220;
+  --border-2: 219 215 205;
+  --text: 18 17 15;
+  --text-2: 82 78 70;
+  --text-3: 150 146 136;
+  --success: 46 140 104;
+  --warning: 150 92 22;
+  --danger: 178 46 60;
+  --shadow-color: 18 17 15;
+  --ink: 18 17 15;
+  --grain-blend: multiply;
+  --grain-ink: 18 17 15;
+  --grain-opacity: 0.34;
+}
+
+/* ── Escuro: tinta (padrão) ──────────────────────────────── */
+/* Nasce do bloco "Resumo do amor" do mockup: #191510 com halo carmim. */
+[data-theme="tinta"] {
+  --bg: 25 21 16;           /* #191510 */
+  --bg-2: 32 27 20;         /* #201B14 */
+  --surface: 36 30 23;      /* #241E17 */
+  --surface-2: 44 37 28;
+  --border: 56 47 36;       /* #382F24 */
+  --border-2: 71 60 45;
+  --text: 246 241 232;      /* #F6F1E8 */
+  --text-2: 201 191 174;    /* #C9BFAE */
+  --text-3: 138 128 111;    /* #8A806F */
+  --success: 122 194 156;
+  --warning: 216 160 84;
+  --danger: 226 112 122;
+  --gold: 214 172 88; /* aberto para continuar legível sobre tinta */
+  --shadow-color: 0 0 0;
+  --ink: 246 241 232;
+  --grain-blend: screen;
+  --grain-ink: 246 241 232;
+  --grain-opacity: 0.32;
+}
+
+/* Nanquim — a noite fechada, para leitura na cama. */
+[data-theme="nanquim"] {
+  --bg: 14 12 10;
+  --bg-2: 20 17 14;
+  --surface: 26 22 18;
+  --surface-2: 34 29 23;
+  --border: 45 38 30;
+  --border-2: 60 51 40;
+  --text: 240 235 226;
+  --text-2: 186 176 160;
+  --text-3: 124 115 100;
+  --success: 122 194 156;
+  --warning: 216 160 84;
+  --danger: 226 112 122;
+  --gold: 214 172 88; /* aberto para continuar legível sobre tinta */
+  --shadow-color: 0 0 0;
+  --ink: 240 235 226;
+  --grain-blend: screen;
+  --grain-ink: 240 235 226;
+  --grain-opacity: 0.26;
+}
+
+/* ---- Acentos ----
+   O carmim é o acento da casa. `--accent-ink` é a versão fechada,
+   usada em texto no tamanho de corpo (o acento puro não tem
+   contraste para parágrafo sobre papel). */
+[data-accent="carmim"] { --accent: 192 57 92;  --accent-2: 224 112 90; --accent-ink: 163 46 76; }
+[data-accent="rose"]   { --accent: 229 103 155; --accent-2: 244 143 177; --accent-ink: 186 62 116; }
+[data-accent="coral"]  { --accent: 224 96 76;  --accent-2: 240 136 62;  --accent-ink: 178 66 48; }
+[data-accent="gold"]   { --accent: 184 134 47; --accent-2: 214 172 88;  --accent-ink: 140 100 32; }
+[data-accent="teal"]   { --accent: 42 146 134; --accent-2: 74 190 176;  --accent-ink: 30 112 103; }
+[data-accent="sky"]    { --accent: 52 122 196; --accent-2: 90 160 240;  --accent-ink: 38 94 156; }
+[data-accent="tinta"]  { --accent: 23 20 15;   --accent-2: 87 80 63;    --accent-ink: 23 20 15; }
+:root { --accent: 192 57 92; --accent-2: 224 112 90; --accent-ink: 163 46 76; }
+
+/* No escuro o carmim precisa abrir para continuar legível, e o
+   `--accent-ink` inverte de papel: passa a ser a versão *clara*. */
+[data-theme="tinta"],
+[data-theme="nanquim"] {
+  --accent: 224 96 127;
+  --accent-2: 232 140 122;
+  --accent-ink: 236 138 160;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text));
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}

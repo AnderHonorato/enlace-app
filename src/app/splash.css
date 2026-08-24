@@ -1,0 +1,17 @@
+/* =========================================================
+   SPLASH — animação de entrada do Enlace
+   Regra única: esconder o overlay antes da primeira pintura
+   quando este navegador já viu a splash na primeira utilização.
+
+   Quem decide "já vi" é um script inline no <head> (layout.tsx),
+   do mesmo jeito que o tema é resolvido antes de pintar — ver o
+   `themeInit` logo acima do `splashInit` nesse arquivo. Sem esse
+   gate via atributo, o componente ainda teria que montar e só
+   então se esconder via JS, e o HTML já pintado pelo navegador
+   (antes da hidratação) mostraria a marca por um instante a cada
+   recarregamento dentro da mesma aba.
+   ========================================================= */
+
+html[data-splash-seen="1"] #enlace-splash {
+  display: none;
+}

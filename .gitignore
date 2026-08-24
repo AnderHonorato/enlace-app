@@ -1,0 +1,46 @@
+# dependências
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/.next-build/
+/.next-preview/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# Prisma e banco local
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/dev.db*
+
+# uploads (conteúdo do usuário)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# env
+.env
+.env*.local
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+.vercel
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+desktop.ini
+
+# cópias de segurança locais
+/backups/

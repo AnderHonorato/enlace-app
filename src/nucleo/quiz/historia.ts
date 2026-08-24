@@ -1,0 +1,326 @@
+import { Hourglass } from "lucide-react";
+import type { PacoteQuiz } from "./tipos";
+
+export const HISTORIA: PacoteQuiz = {
+  key: "historia",
+  titulo: "Viagem no",
+  destaque: "Tempo",
+  desc: "Antiguidade, Brasil, guerras e grandes personagens",
+  icone: Hourglass,
+  accent: "warning",
+  perguntas: [
+    // ── Múltipla escolha ────────────────────────────────────────────────────
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano os portugueses chegaram ao Brasil?",
+      opcoes: ["1500", "1492", "1522", "1450"],
+      correta: 0,
+      explicacao: "A frota de Pedro Álvares Cabral aportou no sul da Bahia em abril de 1500.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem proclamou a Independência do Brasil?",
+      opcoes: ["Dom Pedro I", "Dom Pedro II", "Dom João VI", "Tiradentes"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano foi proclamada a República no Brasil?",
+      opcoes: ["1889", "1888", "1822", "1891"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano a escravidão foi abolida no Brasil?",
+      opcoes: ["1888", "1889", "1871", "1850"],
+      correta: 0,
+      explicacao: "A Lei Áurea foi assinada em 13 de maio de 1888 pela princesa Isabel. O Brasil foi o último país das Américas a abolir a escravidão.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem foi o primeiro presidente do Brasil?",
+      opcoes: ["Deodoro da Fonseca", "Floriano Peixoto", "Prudente de Morais", "Getúlio Vargas"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano começou a Segunda Guerra Mundial?",
+      opcoes: ["1939", "1914", "1945", "1941"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano caiu o Muro de Berlim?",
+      opcoes: ["1989", "1991", "1961", "1985"],
+      correta: 0,
+      explicacao: "Ele havia sido erguido em 1961 e separou a cidade por 28 anos.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual civilização construiu as pirâmides de Gizé?",
+      opcoes: ["Egípcios", "Maias", "Sumérios", "Persas"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem foi Cleópatra?",
+      opcoes: [
+        "A última rainha do Egito antigo",
+        "Uma imperatriz romana",
+        "Uma rainha da Pérsia",
+        "Uma faraó da primeira dinastia",
+      ],
+      correta: 0,
+      explicacao: "Curiosamente, ela viveu mais perto no tempo da criação do iPhone do que da construção das pirâmides.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano começou a Revolução Francesa?",
+      opcoes: ["1789", "1776", "1804", "1815"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem pintou a Mona Lisa?",
+      opcoes: ["Leonardo da Vinci", "Michelangelo", "Rafael", "Botticelli"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "A Guerra Fria opôs quais duas potências?",
+      opcoes: [
+        "Estados Unidos e União Soviética",
+        "Estados Unidos e China",
+        "Inglaterra e Alemanha",
+        "França e Rússia",
+      ],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem popularizou a imprensa de tipos móveis na Europa?",
+      opcoes: ["Gutenberg", "Galileu", "Da Vinci", "Newton"],
+      correta: 0,
+      explicacao: "Por volta de 1450. Em cinquenta anos a Europa saltou de alguns milhares para milhões de livros.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano o ser humano pisou na Lua pela primeira vez?",
+      opcoes: ["1969", "1961", "1972", "1957"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual civilização é considerada o berço da democracia?",
+      opcoes: ["Grécia Antiga", "Roma Antiga", "Egito Antigo", "Mesopotâmia"],
+      correta: 0,
+      explicacao: "Atenas, no século V a.C. — embora só uma fração da população pudesse votar.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano os Estados Unidos declararam independência?",
+      opcoes: ["1776", "1789", "1812", "1620"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem liderou o movimento de independência da Índia pela via não violenta?",
+      opcoes: ["Gandhi", "Nehru", "Ambedkar", "Bose"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Em que ano o Brasil ganhou sua primeira Copa do Mundo?",
+      opcoes: ["1958", "1950", "1962", "1970"],
+      correta: 0,
+      explicacao: "Na Suécia, com um garoto de 17 anos chamado Pelé em campo.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem escreveu 'O Príncipe'?",
+      opcoes: ["Maquiavel", "Dante", "Voltaire", "Rousseau"],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual evento é usado para marcar o fim da Idade Média?",
+      opcoes: [
+        "A queda de Constantinopla, em 1453",
+        "A queda de Roma, em 476",
+        "A Revolução Francesa, em 1789",
+        "A Peste Negra, em 1348",
+      ],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem foi Napoleão Bonaparte?",
+      opcoes: [
+        "Um general que virou imperador da França",
+        "Um rei da Inglaterra",
+        "Um papa do Renascimento",
+        "Um czar russo",
+      ],
+      correta: 0,
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Qual foi a capital do Império Bizantino?",
+      opcoes: ["Constantinopla", "Roma", "Atenas", "Alexandria"],
+      correta: 0,
+      explicacao: "Hoje é Istambul, na Turquia.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "O que foi a Inconfidência Mineira?",
+      opcoes: [
+        "Um movimento pela independência do Brasil, em 1789",
+        "Uma revolta de escravizados na Bahia",
+        "Uma guerra contra a Argentina",
+        "Uma rebelião militar da República",
+      ],
+      correta: 0,
+      explicacao: "Tiradentes foi o único condenado à morte — os demais tiveram as penas convertidas em degredo.",
+    },
+    {
+      tipo: "escolha",
+      enunciado: "Quem foi o presidente que governou o Brasil por mais tempo?",
+      opcoes: ["Getúlio Vargas", "Juscelino Kubitschek", "Dom Pedro II", "Fernando Henrique Cardoso"],
+      correta: 0,
+      explicacao: "Foram 18 anos somando os dois períodos: 1930–1945 e 1951–1954.",
+    },
+
+    // ── Mito ou Fato ────────────────────────────────────────────────────────
+    {
+      tipo: "vf",
+      afirmacao: "A Grande Muralha da China é visível a olho nu do espaço.",
+      verdadeiro: false,
+      explicacao: "É longa, mas estreita demais. Nenhum astronauta conseguiu identificá-la sem ajuda de lentes.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Os vikings usavam capacetes com chifres.",
+      verdadeiro: false,
+      explicacao: "Invenção do século XIX, popularizada por figurinos de ópera. Nenhum capacete viking com chifres jamais foi encontrado.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Napoleão era muito baixo para os padrões da época.",
+      verdadeiro: false,
+      explicacao: "Tinha cerca de 1,68 m, a média dos franceses de então. A fama veio da propaganda inglesa e da diferença entre medidas francesas e britânicas.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "A Guerra dos Cem Anos durou mais de cem anos.",
+      verdadeiro: true,
+      explicacao: "116 anos, de 1337 a 1453 — com várias tréguas pelo caminho.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Os gladiadores romanos sempre lutavam até a morte.",
+      verdadeiro: false,
+      explicacao: "Gladiadores eram caros de treinar e manter. A maioria dos combates terminava sem morte.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Santos Dumont voou o 14-Bis em Paris, em 1906.",
+      verdadeiro: true,
+      explicacao: "Foi o primeiro voo homologado publicamente por uma aeronave que decolou por meios próprios.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "A Peste Negra matou cerca de um terço da população da Europa.",
+      verdadeiro: true,
+      explicacao: "Entre 1347 e 1351, estimativas apontam de 30% a 60% da população europeia.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "O Império Bizantino sobreviveu quase mil anos à queda de Roma.",
+      verdadeiro: true,
+      explicacao: "Roma caiu em 476; Constantinopla, só em 1453.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "A Biblioteca de Alexandria foi destruída de uma vez, em um único incêndio.",
+      verdadeiro: false,
+      explicacao: "Ela declinou ao longo de séculos, por cortes de verba, guerras e incêndios sucessivos.",
+    },
+    {
+      tipo: "vf",
+      afirmacao: "Dom Pedro II subiu ao trono do Brasil ainda criança.",
+      verdadeiro: true,
+      explicacao: "Tinha 5 anos quando o pai abdicou, e foi declarado maior de idade aos 14, em 1840.",
+    },
+
+    // ── Ordenar ─────────────────────────────────────────────────────────────
+    {
+      tipo: "ordem",
+      enunciado: "Quem veio primeiro? Coloque as invenções em ordem CRONOLÓGICA.",
+      dicaOrdem: "mais antigo primeiro",
+      itens: ["Telefone", "Rádio", "Televisão", "Internet"],
+      explicacao: "Telefone 1876 · rádio no fim do século XIX · televisão nos anos 1920 · internet a partir de 1969.",
+    },
+    {
+      tipo: "ordem",
+      enunciado: "Coloque os marcos da história do Brasil em ordem CRONOLÓGICA.",
+      dicaOrdem: "mais antigo primeiro",
+      itens: ["Independência", "Lei Áurea", "Proclamação da República", "Era Vargas"],
+      explicacao: "1822 · 1888 · 1889 · 1930.",
+    },
+    {
+      tipo: "ordem",
+      enunciado: "Coloque do MAIS ANTIGO para o MAIS RECENTE.",
+      dicaOrdem: "mais antigo primeiro",
+      itens: ["Pirâmides de Gizé", "Império Romano", "Queda de Constantinopla", "Revolução Francesa"],
+    },
+    {
+      tipo: "ordem",
+      enunciado: "Coloque os acontecimentos do século XX em ordem CRONOLÓGICA.",
+      dicaOrdem: "mais antigo primeiro",
+      itens: ["Primeira Guerra Mundial", "Segunda Guerra Mundial", "Chegada à Lua", "Queda do Muro de Berlim"],
+      explicacao: "1914 · 1939 · 1969 · 1989.",
+    },
+
+    // ── Pistas ──────────────────────────────────────────────────────────────
+    {
+      tipo: "pistas",
+      pistas: [
+        "Nasci em uma ilha do Mediterrâneo.",
+        "Coroei a mim mesmo imperador.",
+        "Fui derrotado em Waterloo e morri exilado.",
+      ],
+      opcoes: ["Napoleão Bonaparte", "Júlio César", "Carlos Magno", "Alexandre, o Grande"],
+      correta: 0,
+    },
+    {
+      tipo: "pistas",
+      pistas: [
+        "Governei um reino às margens de um grande rio.",
+        "Falava vários idiomas e era formada na tradição grega.",
+        "Me relacionei com Júlio César e com Marco Antônio.",
+      ],
+      opcoes: ["Cleópatra", "Nefertiti", "Hatshepsut", "Boadiceia"],
+      correta: 0,
+    },
+    {
+      tipo: "pistas",
+      pistas: [
+        "Fui imperador de um país da América.",
+        "Subi ao trono ainda criança.",
+        "Fui deposto em 1889 e morri na França.",
+      ],
+      opcoes: ["Dom Pedro II", "Dom Pedro I", "Dom João VI", "Maximiliano do México"],
+      correta: 0,
+    },
+    {
+      tipo: "pistas",
+      pistas: [
+        "Fui pintor, inventor, engenheiro e anatomista.",
+        "Escrevia meus cadernos em espelho, da direita para a esquerda.",
+        "Pintei a Última Ceia e a Mona Lisa.",
+      ],
+      opcoes: ["Leonardo da Vinci", "Michelangelo", "Rafael", "Donatello"],
+      correta: 0,
+    },
+  ],
+};
