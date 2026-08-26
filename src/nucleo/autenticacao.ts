@@ -7,6 +7,8 @@ import { prisma } from "./prisma";
 import { appSecret } from "./segredo-aplicacao";
 
 const COOKIE = "amora_session";
+const SESSION_SECONDS = 60 * 60 * 24 * 30;
+
 // Resolvido sob demanda (não no import) para a falha em produção acontecer numa
 // requisição, com mensagem clara, em vez de quebrar o build.
 let secretBytes: Uint8Array | null = null;
@@ -16,7 +18,7 @@ function secretKey(): Uint8Array {
 }
 
 export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 10);
+  return bcrypt.hash(password, 12);
 }
 
 export async function verifyPassword(password: string, hash: string) {
@@ -25,30 +27,43 @@ export async function verifyPassword(password: string, hash: string) {
 
 export async function createSession(userId: string) {
   const token = await new SignJWT({ uid: userId })
-    .setProtectedHeader({ alg: "HS256" })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt()
     .setExpirationTime("30d")
     .sign(secretKey());
 
-  cookies().set(COOKIE, token, {
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: SESSION_SECONDS,
+    priority: "high",
   });
 }
 
-export function destroySession() {
-  cookies().set(COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+export async function destroySession() {
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    priority: "high",
+  });
 }
 
 export async function getUserId(): Promise<string | null> {
-  const token = cookies().get(COOKIE)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secretKey());
-    return (payload.uid as string) || null;
+    const { payload } = await jwtVerify(token, secretKey(), {
+      algorithms: ["HS256"],
+    });
+    return typeof payload.uid === "string" && payload.uid.length > 0 ? payload.uid : null;
   } catch {
     return null;
   }
