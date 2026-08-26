@@ -1,22 +1,26 @@
 import { prisma } from "@/nucleo/prisma";
-import { requireUser, json, handle } from "@/nucleo/api";
+import { requireUser, requireSameOrigin, json, handle } from "@/nucleo/api";
 import { destroySession } from "@/nucleo/autenticacao";
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   return handle(async () => {
+    requireSameOrigin(req);
     const user = await requireUser();
     const coupleId = user.coupleId;
 
-    // Apaga o usuário — em cascata: memórias, comentários, reações e conversas dele.
+    // Apaga apenas os dados ligados diretamente a esta conta. O casal não é
+    // dissolvido se o parceiro ainda existir: isso evita apagar por cascata
+    // cápsulas, tarefas, planos e outras memórias compartilhadas dele.
     await prisma.user.delete({ where: { id: user.id } });
 
     if (coupleId) {
-      // Desvincula o parceiro e dissolve o casal (as memórias dele viram pessoais).
-      await prisma.user.updateMany({ where: { coupleId }, data: { coupleId: null } });
-      await prisma.couple.delete({ where: { id: coupleId } }).catch(() => {});
+      const membrosRestantes = await prisma.user.count({ where: { coupleId } });
+      if (membrosRestantes === 0) {
+        await prisma.couple.delete({ where: { id: coupleId } }).catch(() => {});
+      }
     }
 
-    destroySession();
+    await destroySession();
     return json({ ok: true });
   });
 }
