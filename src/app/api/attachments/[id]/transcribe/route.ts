@@ -8,6 +8,8 @@ import { resolveProvider } from "@/nucleo/chave-ia";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type ContextoRota = { params: Promise<{ id: string }> };
+
 async function loadAudio(url: string) {
   if (url.startsWith("/uploads/")) return readFile(path.join(process.cwd(), "public", url.substring(1)));
   const rawBase = process.env.NEXT_PUBLIC_APP_URL || "";
@@ -38,10 +40,11 @@ async function transcribe(buffer: Buffer, filename: string, mime: string, key: s
   return data.text.trim();
 }
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
-    const attachment = await prisma.attachment.findUnique({ where: { id: params.id }, include: { entry: { select: { authorId: true, coupleId: true, visibility: true } } } });
+    const { id } = await params;
+    const attachment = await prisma.attachment.findUnique({ where: { id }, include: { entry: { select: { authorId: true, coupleId: true, visibility: true } } } });
     if (!attachment) return bad("Áudio não encontrado.", 404);
     if (attachment.type !== "audio") return bad("Somente áudios podem ser transcritos.");
     const allowed = attachment.entry.authorId === user.id || (!!user.coupleId && attachment.entry.coupleId === user.coupleId && attachment.entry.visibility === "shared");
