@@ -30,6 +30,10 @@ function cabecalhosDoArquivo(nome: string, mime: string) {
   };
 }
 
+function corpoBinario(dados: Buffer): ArrayBuffer {
+  return Uint8Array.from(dados).buffer;
+}
+
 type Contexto = { params: Promise<{ id: string }> | { id: string } };
 
 async function idDosParametros(contexto: Contexto) {
@@ -65,7 +69,7 @@ export async function GET(req: Request, contexto: Contexto) {
         const end = Math.min(requestedEnd, data.length - 1);
         if (Number.isInteger(start) && Number.isInteger(end) && start >= 0 && start <= end) {
           const chunk = data.subarray(start, end + 1);
-          return new Response(chunk, {
+          return new Response(corpoBinario(chunk), {
             status: 206,
             headers: {
               ...commonHeaders,
@@ -81,7 +85,7 @@ export async function GET(req: Request, contexto: Contexto) {
       });
     }
 
-    return new Response(data, {
+    return new Response(corpoBinario(data), {
       headers: { ...commonHeaders, "Content-Length": String(data.length) },
     });
   });
