@@ -24,9 +24,9 @@ model User {
   birthday    DateTime?
 
   // localização em tempo real
-  shareLocation    Boolean   @default(false)
-  liveLat          Float?
-  liveLng          Float?
+  shareLocation     Boolean   @default(false)
+  liveLat           Float?
+  liveLng           Float?
   locationUpdatedAt DateTime?
 
   // preferências
@@ -73,6 +73,7 @@ model User {
   messagesSent Message[]
   pushSubs     PushSub[]
   tasks        TaskItem[]
+  authSessions AuthSession[]
 
   gameSessionsHosted GameSession[] @relation("GameSessionHost")
   gameSessionsGuest  GameSession[] @relation("GameSessionGuest")
@@ -133,17 +134,17 @@ model Couple {
   nowPlaying  String    @default("{}") // {trackId, trackName, artist, image, startedBy, at} — rádio compartilhada (seleção do casal; play/pause continua local)
   createdAt   DateTime  @default(now())
 
-  members    User[]         @relation("CoupleMembers")
-  entries    Entry[]
-  messages   Message[]
-  summaries  DailySummary[]
-  goals      Goal[]
-  wishes     Wish[]
-  capsules   Capsule[]
-  taskLists  TaskList[]
-  retroMusic RetroMusic[]
-  wordleGame WordleGame?
-  gameScores GameScore[]
+  members      User[]         @relation("CoupleMembers")
+  entries      Entry[]
+  messages     Message[]
+  summaries    DailySummary[]
+  goals        Goal[]
+  wishes       Wish[]
+  capsules     Capsule[]
+  taskLists    TaskList[]
+  retroMusic   RetroMusic[]
+  wordleGame   WordleGame?
+  gameScores   GameScore[]
   gameSessions GameSession[]
 }
 
@@ -184,8 +185,8 @@ model GameSession {
 
   acceptedAt DateTime?
   finishedAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([coupleId, status])
   @@index([hostId, status])
@@ -200,9 +201,9 @@ model GameSession {
 // `dia` guarda a data no fuso de Brasília ("AAAA-MM-DD"). Sem isso, a
 // pontuação do dia viraria às 21h, quando o dia UTC muda.
 model GameScore {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   coupleId String?
   couple   Couple? @relation(fields: [coupleId], references: [id], onDelete: SetNull)
 
@@ -392,16 +393,21 @@ model Message {
 /// Arquivo enviado no chat. É usado quando não existe um bucket Supabase
 /// configurado, evitando depender do disco temporário de servidores serverless.
 model ChatUpload {
-  id         String   @id @default(cuid())
-  coupleId   String
-  uploaderId String
-  name       String
-  mime       String
-  size       Int
-  data       Bytes
-  createdAt  DateTime @default(now())
+  id              String   @id @default(cuid())
+  coupleId        String
+  uploaderId      String
+  name            String
+  mime            String
+  size            Int
+  data            Bytes
+  storageProvider String   @default("database") // database | supabase
+  storageKey      String?
+  category        String   @default("chat") // chat | avatar | album | memorias
+  createdAt       DateTime @default(now())
 
   @@index([coupleId, createdAt])
+  @@index([coupleId, category, createdAt])
+  @@index([uploaderId, createdAt])
 }
 
 model TaskList {
@@ -599,18 +605,33 @@ model RetroMusic {
 }
 
 model WordleGame {
-  id         String   @id @default(cuid())
-  coupleId   String   @unique
-  couple     Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
-  word       String
-  category   String
-  emoji      String
-  locked     Boolean  @default(false)
-  lockedBy   String?  // userId de quem bloqueou
-  guesses    String   @default("[]") // JSON: {userId, guess, states}[]
-  currentTurn String  @default("") // userId da vez
-  skipReqBy  String?  // userId que pediu pra pular
+  id          String    @id @default(cuid())
+  coupleId    String    @unique
+  couple      Couple    @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  word        String
+  category    String
+  emoji       String
+  locked      Boolean   @default(false)
+  lockedBy    String? // userId de quem bloqueou
+  guesses     String    @default("[]") // JSON: {userId, guess, states}[]
+  currentTurn String    @default("") // userId da vez
+  skipReqBy   String? // userId que pediu pra pular
   timerEndsAt DateTime? // quando o timer do jogador atual expira
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+/// Sessão revogável por dispositivo. Permite sair de todos os aparelhos e
+/// encerrar sessões inativas sem depender apenas da expiração do JWT.
+model AuthSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
