@@ -1,4 +1,4 @@
-name: Aplicar evolução aditiva do schema
+name: Aplicar evolução e validar Next 15
 
 on:
   push:
@@ -11,11 +11,12 @@ permissions:
 
 env:
   DATABASE_URL: file:./prisma/schema-evolution-ci.db
+  APP_SECRET: ci-enlace-app-segredo-temporario-com-mais-de-32-caracteres
 
 jobs:
   evoluir:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
@@ -31,6 +32,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Adaptar parâmetros dinâmicos ao Next 15
+        run: python3 scripts/adaptar-next15-parametros.py
+
       - name: Evoluir schema sem remover dados
         run: python3 scripts/evoluir-schema-auditoria.py
 
@@ -39,11 +43,26 @@ jobs:
           npx prisma format --schema prisma/schema.prisma
           npx prisma validate --schema prisma/schema.prisma
 
-      - name: Registrar alteração
+      - name: Verificar lint
+        run: npm run lint
+
+      - name: Verificar TypeScript
+        run: npm run typecheck
+
+      - name: Executar testes
+        run: npm run test
+
+      - name: Verificar arquitetura
+        run: npm run arquitetura:verificar
+
+      - name: Compilar aplicação
+        run: npm run build
+
+      - name: Registrar alterações validadas
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add prisma/schema.prisma
+          git add prisma/schema.prisma src/app/api src/app/app
           git diff --cached --quiet && exit 0
-          git commit -m "dados: adicionar sessões revogáveis e mídia privada"
+          git commit -m "fix: adaptar rotas dinâmicas ao Next 15"
           git push origin HEAD:feat/100-melhorias-enlace
