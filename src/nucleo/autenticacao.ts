@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
-import { appSecret } from "./segredo-aplicacao";
+import { sessionSecret } from "./segredo-aplicacao";
 
 const COOKIE = "amora_session";
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
@@ -13,7 +13,7 @@ const SESSION_SECONDS = 60 * 60 * 24 * 30;
 // requisição, com mensagem clara, em vez de quebrar o build.
 let secretBytes: Uint8Array | null = null;
 function secretKey(): Uint8Array {
-  if (!secretBytes) secretBytes = new TextEncoder().encode(appSecret());
+  if (!secretBytes) secretBytes = new TextEncoder().encode(sessionSecret());
   return secretBytes;
 }
 
@@ -23,6 +23,13 @@ export async function hashPassword(password: string) {
 
 export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
+}
+
+/** Retorna true quando um hash bcrypt antigo deve ser atualizado após login. */
+export function passwordHashNeedsUpgrade(hash: string): boolean {
+  const match = /^\$2[aby]\$(\d{2})\$/.exec(hash);
+  if (!match) return true;
+  return Number(match[1]) < 12;
 }
 
 export async function createSession(userId: string) {
