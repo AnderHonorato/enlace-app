@@ -7,6 +7,7 @@ on:
       - .github/workflows/aplicar-evolucao-schema.yml
       - scripts/adaptar-next15-parametros.py
       - scripts/evoluir-schema-auditoria.py
+      - scripts/corrigir-warnings-hooks.py
 
 permissions:
   contents: write
@@ -37,6 +38,9 @@ jobs:
       - name: Adaptar parâmetros dinâmicos ao Next 15
         run: python3 scripts/adaptar-next15-parametros.py
 
+      - name: Corrigir warnings seguros de hooks
+        run: python3 scripts/corrigir-warnings-hooks.py
+
       - name: Evoluir schema sem remover dados
         run: python3 scripts/evoluir-schema-auditoria.py
 
@@ -64,7 +68,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add prisma/schema.prisma src/app/api src/app/app
+          git add prisma/schema.prisma src/app/api src/app/app src/componentes
           git diff --cached --quiet && exit 0
-          git commit -m "fix: adaptar rotas e páginas ao Next 15"
+          git commit -m "fix: aplicar correções validadas de compatibilidade e hooks"
           git push origin HEAD:feat/100-melhorias-enlace
