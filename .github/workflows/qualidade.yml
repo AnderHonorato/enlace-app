@@ -37,6 +37,9 @@ jobs:
       - name: Verificar TypeScript
         run: npm run typecheck
 
+      - name: Executar testes
+        run: npm run test
+
       - name: Verificar arquitetura
         run: npm run arquitetura:verificar
 
