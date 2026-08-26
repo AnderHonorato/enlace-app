@@ -11,6 +11,8 @@
     "preview": "set NEXT_DIST_DIR=.next-preview&& next dev -p 3008",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm run arquitetura:verificar",
     "db:push": "prisma db push",
     "db:safe": "node scripts/atualizar-banco-seguro.mjs",
     "db:importar": "node scripts/importar-banco-atual.mjs",
