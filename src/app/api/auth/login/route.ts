@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { prisma } from "@/nucleo/prisma";
-import { verifyPassword, createSession } from "@/nucleo/autenticacao";
+import {
+  verifyPassword,
+  createSession,
+  hashPassword,
+  passwordHashNeedsUpgrade,
+} from "@/nucleo/autenticacao";
 import { bad, json, handle } from "@/nucleo/api";
 import { rateLimit, rateLimitReset, clientIp, tooManyMessage } from "@/nucleo/limite-requisicoes";
 
@@ -31,6 +36,15 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return bad("E-mail ou senha incorretos.", 401);
+    }
+
+    // Usuários antigos migram para o custo bcrypt atual no próprio login,
+    // sem reset de senha nem migração destrutiva do banco.
+    if (passwordHashNeedsUpgrade(user.passwordHash)) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await hashPassword(password) },
+      });
     }
 
     rateLimitReset(accountKey);
