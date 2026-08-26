@@ -27,8 +27,6 @@ import { cn } from "@/nucleo/utilitarios";
 import { spring } from "@/nucleo/movimento";
 import type { Me } from "@/nucleo/usuario-atual";
 
-
-
 export type Musica = {
   id: string;
   trackId: string;
@@ -72,11 +70,15 @@ export type TipoContextoRadio = {
 
 const ContextoRadio = createContext<TipoContextoRadio | null>(null);
 
-export function usarRadio() {
+/** Nome técnico começa com `use` para o React reconhecer corretamente o hook. */
+export function useRadio() {
   const ctx = useContext(ContextoRadio);
-  if (!ctx) throw new Error("usarRadio deve ser usado dentro de ProvedorRadio");
+  if (!ctx) throw new Error("useRadio deve ser usado dentro de ProvedorRadio");
   return ctx;
 }
+
+/** Mantém o nome em português usado pelo restante do projeto sem quebrar imports. */
+export const usarRadio = useRadio;
 
 const CHAVE_ARMAZENAMENTO = "radio-state";
 const INTERVALO_SINCRONIZACAO = 30_000;
@@ -200,10 +202,6 @@ export function ProvedorRadio({ children }: { children: React.ReactNode }) {
         }
         el.src = r.preview;
         el.currentTime = 0;
-        // `isPlaying` já pode estar true (quem clicou em "tocar" espera som
-        // assim que a prévia chegar). A Promise de `.play()` rejeita se o
-        // navegador bloquear autoplay — sem o `.catch`, isso vira uma
-        // rejeição não tratada e a UI trava mostrando "tocando" sem som.
         if (isPlayingRef.current) {
           el.play().catch(() => setIsPlaying(false));
         }
@@ -239,9 +237,6 @@ export function ProvedorRadio({ children }: { children: React.ReactNode }) {
     setLocallyClosed(false);
     setCurrent(song);
     setIsPlaying(true);
-    // O QUE toca é do casal (como Couple.typing) — quem já ouvia essa faixa
-    // mantém o crédito de tê-la começado, o servidor decide isso. SE está
-    // tocando fica só neste aparelho: nunca sobe pra cá.
     api("/api/radio/agora", {
       method: "POST",
       body: JSON.stringify({
@@ -354,13 +349,6 @@ export function ProvedorRadio({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      {/*
-        Um único <audio> para toda a rádio, vivendo aqui no provider (não na
-        barra flutuante): assim ele sobrevive mesmo quando `ReprodutorRadio` não
-        está montado ou `current` ainda está null — por exemplo, a tira do
-        cabeçalho pode mandar tocar uma faixa que o par escolheu antes de a
-        barra flutuante existir na tela.
-      */}
       <audio
         ref={audioRef}
         preload="metadata"
