@@ -10,7 +10,7 @@
     "build:check": "set NEXT_DIST_DIR=.next-build&& next build",
     "preview": "set NEXT_DIST_DIR=.next-preview&& next dev -p 3008",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test testes/*.test.ts",
     "check": "npm run lint && npm run typecheck && npm run test && npm run arquitetura:verificar",
