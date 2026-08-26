@@ -19,57 +19,22 @@ jobs:
         with:
           ref: feat/100-melhorias-enlace
 
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
       - name: Evoluir schema sem remover dados
-        shell: python
+        run: python3 scripts/evoluir-schema-auditoria.py
+
+      - name: Formatar e validar schema
         run: |
-          from pathlib import Path
-          p = Path('prisma/schema.prisma')
-          s = p.read_text(encoding='utf-8')
-
-          if 'authSessions AuthSession[]' not in s:
-              s = s.replace('  tasks        TaskItem[]\n', '  tasks        TaskItem[]\n  authSessions AuthSession[]\n')
-
-          old_upload = '''model ChatUpload {
-  id         String   @id @default(cuid())
-  coupleId   String
-  uploaderId String
-  name       String
-  mime       String
-  size       Int
-  data       Bytes
-  createdAt  DateTime @default(now())
-
-  @@index([coupleId, createdAt])
-}'''
-          new_upload = '''model ChatUpload {
-  id              String   @id @default(cuid())
-  coupleId        String
-  uploaderId      String
-  name            String
-  mime            String
-  size            Int
-  data            Bytes?
-  storageProvider String   @default("database") // database | supabase
-  storageKey      String?
-  category        String   @default("chat") // chat | avatar | album | memorias
-  createdAt       DateTime @default(now())
-
-  @@index([coupleId, createdAt])
-  @@index([coupleId, category, createdAt])
-  @@index([uploaderId, createdAt])
-}'''
-          if old_upload in s:
-              s = s.replace(old_upload, new_upload)
-          elif 'storageProvider String' not in s:
-              raise SystemExit('Bloco ChatUpload inesperado; abortando para não corromper o schema.')
-
-          if 'model AuthSession {' not in s:
-              s += '''\n\n/// Sessão revogável por dispositivo. Permite sair de todos os aparelhos e\n/// encerrar sessões inativas sem depender apenas da expiração do JWT.\nmodel AuthSession {\n  id         String    @id @default(cuid())\n  userId     String\n  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  createdAt  DateTime  @default(now())\n  lastSeenAt DateTime  @default(now())\n  expiresAt  DateTime\n  revokedAt  DateTime?\n\n  @@index([userId, revokedAt])\n  @@index([expiresAt])\n}\n'''
-
-          p.write_text(s, encoding='utf-8')
-
-      - name: Validar schema
-        run: npx prisma format --schema prisma/schema.prisma
+          npx prisma format --schema prisma/schema.prisma
+          npx prisma validate --schema prisma/schema.prisma
 
       - name: Registrar alteração
         run: |
