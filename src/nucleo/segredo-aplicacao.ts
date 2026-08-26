@@ -1,41 +1,60 @@
 import "server-only";
 
 /**
- * Segredo da aplicação — assina a sessão (JWT) e deriva a chave que cifra as
- * chaves de IA dos usuários em repouso.
+ * Segredos separados por finalidade.
  *
- * Antes, os dois usos caíam silenciosamente para a string "amora-dev-secret"
- * quando a variável não estava definida. Essa string está no repositório: se o
- * APP_SECRET não chegasse ao ambiente por um erro de deploy, qualquer pessoa
- * poderia forjar a sessão de qualquer usuário e decifrar as chaves salvas —
- * e nada no app avisaria. Em produção agora isso é uma falha explícita.
+ * `SESSION_SECRET` assina sessões e `DATA_ENCRYPTION_SECRET` cifra dados
+ * sensíveis. `APP_SECRET` continua aceito como fallback de migração para não
+ * derrubar instalações existentes; projetos novos devem usar as duas chaves
+ * independentes.
  */
-const DEV_FALLBACK = "amora-dev-secret";
+const DEV_SESSION_FALLBACK = "enlace-dev-session-secret";
+const DEV_DATA_FALLBACK = "enlace-dev-data-secret";
 
-let cached: string | null = null;
+let sessaoCache: string | null = null;
+let dadosCache: string | null = null;
 
-export function appSecret(): string {
-  if (cached) return cached;
+function exigirOuMigrar(nome: "SESSION_SECRET" | "DATA_ENCRYPTION_SECRET", fallbackDev: string): string {
+  const especifico = process.env[nome]?.trim();
+  if (especifico) return especifico;
 
-  const fromEnv = process.env.APP_SECRET?.trim();
-  if (fromEnv) {
-    cached = fromEnv;
-    return cached;
+  const legado = process.env.APP_SECRET?.trim();
+  if (legado) {
+    if (process.env.NODE_ENV === "production") {
+      console.warn(`[Enlace] ${nome} ainda usa APP_SECRET como fallback. Defina uma chave exclusiva para concluir a separação de segredos.`);
+    }
+    return legado;
   }
 
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "APP_SECRET não definido. Ele assina as sessões e cifra as chaves de IA — " +
-        "a aplicação não pode subir em produção sem ele. " +
-        "Gere um valor aleatório (ex.: `openssl rand -base64 32`) e defina APP_SECRET."
+      `${nome} não definido. Gere uma chave aleatória forte (ex.: openssl rand -base64 48) antes de iniciar a aplicação.`
     );
   }
 
-  // Em desenvolvimento seguimos com o fallback, mas avisando alto.
-  console.warn(
-    "[Enlace] APP_SECRET não definido — usando segredo de desenvolvimento. " +
-      "NUNCA use isso em produção."
-  );
-  cached = DEV_FALLBACK;
-  return cached;
+  console.warn(`[Enlace] ${nome} não definido — usando segredo apenas de desenvolvimento.`);
+  return fallbackDev;
+}
+
+export function sessionSecret(): string {
+  if (!sessaoCache) sessaoCache = exigirOuMigrar("SESSION_SECRET", DEV_SESSION_FALLBACK);
+  return sessaoCache;
+}
+
+export function dataEncryptionSecret(): string {
+  if (!dadosCache) dadosCache = exigirOuMigrar("DATA_ENCRYPTION_SECRET", DEV_DATA_FALLBACK);
+  return dadosCache;
+}
+
+/**
+ * Apenas para abrir registros cifrados antes da migração para o formato v2.
+ * Quando APP_SECRET não existe, usa a chave de dados atual.
+ */
+export function legacyDataEncryptionSecret(): string {
+  return process.env.APP_SECRET?.trim() || dataEncryptionSecret();
+}
+
+/** @deprecated Prefira sessionSecret() ou dataEncryptionSecret(). */
+export function appSecret(): string {
+  return sessionSecret();
 }
