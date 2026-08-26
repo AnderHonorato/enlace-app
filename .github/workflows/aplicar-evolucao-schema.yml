@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  DATABASE_URL: file:./prisma/schema-evolution-ci.db
+
 jobs:
   evoluir:
     runs-on: ubuntu-latest
