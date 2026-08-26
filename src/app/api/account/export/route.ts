@@ -2,7 +2,10 @@ import { prisma } from "@/nucleo/prisma";
 import { requireUser, handle } from "@/nucleo/api";
 import { toPlain } from "@/nucleo/sanitizacao";
 
-// Baixa tudo o que é seu num arquivo JSON.
+export const dynamic = "force-dynamic";
+
+// Baixa uma cópia legível dos dados pessoais e compartilhados da conta sem
+// incluir credenciais, hashes, PIN, chaves de IA ou segredos de push.
 export async function GET() {
   return handle(async () => {
     const user = await requireUser();
@@ -11,7 +14,7 @@ export async function GET() {
       await Promise.all([
         prisma.entry.findMany({
           where: { authorId: user.id },
-          include: { attachments: { select: { url: true, type: true } } },
+          include: { attachments: { select: { url: true, type: true, caption: true } } },
           orderBy: { entryDate: "asc" },
         }),
         prisma.comment.findMany({ where: { authorId: user.id }, orderBy: { createdAt: "asc" } }),
@@ -34,6 +37,7 @@ export async function GET() {
       : null;
 
     const data = {
+      versaoDoFormato: 2,
       exportadoEm: new Date().toISOString(),
       app: "Enlace",
       perfil: {
@@ -61,16 +65,24 @@ export async function GET() {
         visibilidade: e.visibility,
         tags: safeJson(e.tags),
         insightIA: e.insight,
-        fotos: e.attachments.length,
-        fotosDados: e.attachments.map((a) => a.url),
+        anexos: e.attachments.map((a) => ({ tipo: a.type, legenda: a.caption, url: a.url })),
       })),
       comentarios: comments.map((c) => ({ texto: c.content, data: c.createdAt })),
       reacoes: reactions.map((r) => ({ emoji: r.emoji, data: r.createdAt })),
-      conversaDoCasal: messages.map((m) => ({ de: m.senderId === user.id ? "eu" : "parceiro", texto: m.content, data: m.createdAt })),
+      conversaDoCasal: messages.map((m) => ({
+        de: m.senderId === user.id ? "eu" : "parceiro",
+        texto: m.content,
+        data: m.createdAt,
+      })),
       conversasComIA: chat.map((m) => ({ personagem: m.character, quem: m.role, texto: m.content, data: m.createdAt })),
       metas: goals.map((g) => ({ titulo: g.title, emoji: g.emoji, passos: safeJson(g.steps), concluida: g.done })),
       desejos: wishes.map((w) => ({ titulo: w.title, tipo: w.kind, realizado: w.done })),
-      capsulas: capsules.map((c) => ({ titulo: c.title, abreEm: c.openAt, aberta: !!c.openedAt, texto: c.openAt <= new Date() ? c.content : "(ainda lacrada)" })),
+      capsulas: capsules.map((c) => ({
+        titulo: c.title,
+        abreEm: c.openAt,
+        aberta: !!c.openedAt,
+        texto: c.openAt <= new Date() ? c.content : "(ainda lacrada)",
+      })),
       resumos: summaries.map((s) => ({ periodo: s.period, dia: s.day, titulo: s.title, mensagem: s.message, dica: s.tip })),
     };
 
@@ -79,6 +91,9 @@ export async function GET() {
       headers: {
         "content-type": "application/json; charset=utf-8",
         "content-disposition": `attachment; filename="enlace-backup-${stamp}.json"`,
+        "cache-control": "private, no-store, max-age=0",
+        pragma: "no-cache",
+        "x-content-type-options": "nosniff",
       },
     });
   });
