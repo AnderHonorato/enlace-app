@@ -8,9 +8,10 @@ RAIZ_APP = Path("src/app/app")
 # Este script é propositalmente conservador: transforma tipos inline simples e
 # mantém cada alteração idempotente para poder rodar de novo sem duplicar código.
 TIPO_PARAMS_SINCRONO = re.compile(r"params:\s*\{([^{}]+)\}")
-TIPO_SEARCH_PARAMS_SINCRONO = re.compile(r"searchParams:\s*\{([^{}]+)\}")
+TIPO_SEARCH_PARAMS_SINCRONO = re.compile(r"searchParams(\??):\s*\{([^{}]+)\}")
 USO_PARAMS = re.compile(r"(?<!await )\bparams\.([A-Za-z_$][A-Za-z0-9_$]*)")
-USO_SEARCH_PARAMS = re.compile(r"\bsearchParams\.([A-Za-z_$][A-Za-z0-9_$]*)")
+USO_SEARCH_PARAMS = re.compile(r"\bsearchParams(?:\?\.|\.)([A-Za-z_$][A-Za-z0-9_$]*)")
+SEARCH_PARAMS_PROMISE = re.compile(r"searchParams\??:\s*Promise<")
 
 
 def tornar_promise(texto: str, tipo: re.Pattern[str], nome: str) -> tuple[str, bool]:
@@ -25,6 +26,21 @@ def tornar_promise(texto: str, tipo: re.Pattern[str], nome: str) -> tuple[str, b
         return f"{nome}: Promise<{{{corpo}}}>"
 
     return tipo.sub(substituir_tipo, texto), alterou
+
+
+def tornar_search_params_tipo_promise(texto: str) -> tuple[str, bool]:
+    alterou = False
+
+    def substituir_tipo(match: re.Match[str]) -> str:
+        nonlocal alterou
+        opcional = match.group(1)
+        corpo = match.group(2)
+        if ":" not in corpo:
+            return match.group(0)
+        alterou = True
+        return f"searchParams{opcional}: Promise<{{{corpo}}}>"
+
+    return TIPO_SEARCH_PARAMS_SINCRONO.sub(substituir_tipo, texto), alterou
 
 
 def tornar_params_promise(texto: str) -> tuple[str, bool]:
@@ -86,7 +102,7 @@ def resolver_search_params_no_default(texto: str) -> tuple[str, bool]:
     mais legível, uma variável local preserva o narrowing do TypeScript para
     propriedades opcionais usadas em `typeof`, ternários e chamadas como slice().
     """
-    if "searchParams: Promise<" not in texto or not USO_SEARCH_PARAMS.search(texto):
+    if not SEARCH_PARAMS_PROMISE.search(texto) or not USO_SEARCH_PARAMS.search(texto):
         return texto, False
     if "const searchParamsResolvidos = await searchParams;" in texto:
         return texto, False
@@ -113,7 +129,9 @@ def resolver_search_params_no_default(texto: str) -> tuple[str, bool]:
 
     cabecalho = texto[: inicio_corpo + 1]
     corpo = texto[inicio_corpo + 1 :]
-    corpo_novo = USO_SEARCH_PARAMS.sub(r"searchParamsResolvidos.\1", corpo)
+    opcional = "searchParams?: Promise<" in texto
+    prefixo = "searchParamsResolvidos?." if opcional else "searchParamsResolvidos."
+    corpo_novo = USO_SEARCH_PARAMS.sub(lambda match: prefixo + match.group(1), corpo)
     if corpo_novo == corpo:
         return texto, False
 
@@ -123,7 +141,7 @@ def resolver_search_params_no_default(texto: str) -> tuple[str, bool]:
 
 def tornar_search_params_promise(texto: str) -> tuple[str, bool]:
     alterou = False
-    texto, mudou_tipo = tornar_promise(texto, TIPO_SEARCH_PARAMS_SINCRONO, "searchParams")
+    texto, mudou_tipo = tornar_search_params_tipo_promise(texto)
     alterou = alterou or mudou_tipo
 
     novo, resolveu = resolver_search_params_no_default(texto)
@@ -133,8 +151,10 @@ def tornar_search_params_promise(texto: str) -> tuple[str, bool]:
 
     # Fallback conservador para funções server-side fora do componente default.
     # Em páginas normais o caminho acima é usado e resolve apenas uma vez.
-    if "searchParams: Promise<" in texto and USO_SEARCH_PARAMS.search(texto):
-        novo = USO_SEARCH_PARAMS.sub(r"(await searchParams).\1", texto)
+    if SEARCH_PARAMS_PROMISE.search(texto) and USO_SEARCH_PARAMS.search(texto):
+        opcional = "searchParams?: Promise<" in texto
+        prefixo = "(await searchParams)?." if opcional else "(await searchParams)."
+        novo = USO_SEARCH_PARAMS.sub(lambda match: prefixo + match.group(1), texto)
         if novo != texto:
             texto = novo
             alterou = True
