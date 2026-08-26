@@ -1,12 +1,40 @@
+import { after } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/nucleo/prisma";
-import { requireUser, requireIdentity, bad, json, handle } from "@/nucleo/api";
-import { entryInclude, serializeEntry, feedWhere, AI_COMMENT_INCLUDE, FEED_PAGE_SIZE } from "@/nucleo/memorias";
+import { requireUser, requireIdentity, requireSameOrigin, bad, json, handle } from "@/nucleo/api";
+import { entryInclude, serializeEntry, feedWhere, FEED_PAGE_SIZE } from "@/nucleo/memorias";
 import { sanitizeHtml, toPlain } from "@/nucleo/sanitizacao";
 import { analyzeEntry, awardPoints } from "@/nucleo/recompensa";
+import { baseEntryPoints } from "@/nucleo/pontos";
 import { touchStreak } from "@/nucleo/sequencia";
 import { notifyPartner, entryUrl } from "@/nucleo/notificacoes";
+import { validarUploadsDoCasal } from "@/nucleo/uploads-privados";
 import { fmtDate, isRetroactive } from "@/nucleo/utilitarios";
+
+const CONTAGEM_TTL_MS = 60_000;
+const contagensFeed = new Map<string, { total: number; expiraEm: number }>();
+
+function chaveContagem(userId: string, mine: boolean) {
+  return `${userId}:${mine ? "mine" : "feed"}`;
+}
+
+async function contarFeed(userId: string, mine: boolean, where: Prisma.EntryWhereInput) {
+  const chave = chaveContagem(userId, mine);
+  const agora = Date.now();
+  const cache = contagensFeed.get(chave);
+  if (cache && cache.expiraEm > agora) return cache.total;
+
+  const total = await prisma.entry.count({ where });
+  if (contagensFeed.size > 500) contagensFeed.clear();
+  contagensFeed.set(chave, { total, expiraEm: agora + CONTAGEM_TTL_MS });
+  return total;
+}
+
+function invalidarContagem(userId: string) {
+  contagensFeed.delete(chaveContagem(userId, false));
+  contagensFeed.delete(chaveContagem(userId, true));
+}
 
 const createSchema = z.object({
   title: z.string().trim().max(140).optional(),
@@ -44,7 +72,7 @@ export async function GET(req: Request) {
       ? Math.min(30, Math.max(1, Math.trunc(requestedLimit)))
       : FEED_PAGE_SIZE;
 
-    const where = mine ? { authorId: user.id } : feedWhere(user);
+    const where: Prisma.EntryWhereInput = mine ? { authorId: user.id } : feedWhere(user);
     const [rows, total] = await Promise.all([
       prisma.entry.findMany({
         where,
@@ -53,7 +81,7 @@ export async function GET(req: Request) {
         take: limit + 1,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       }),
-      prisma.entry.count({ where }),
+      contarFeed(user.id, mine, where),
     ]);
     const hasMore = rows.length > limit;
     const entries = hasMore ? rows.slice(0, limit) : rows;
@@ -67,6 +95,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   return handle(async () => {
+    requireSameOrigin(req);
     const user = await requireUser();
     const body = await req.json().catch(() => ({}));
     const parsed = createSchema.safeParse(body);
@@ -75,14 +104,29 @@ export async function POST(req: Request) {
 
     const content = sanitizeHtml(d.content);
     const plain = toPlain(content);
-    const photos = d.attachments?.length ?? 0;
+    const mediaCount = d.attachments?.length ?? 0;
 
-    if (!plain.trim() && !d.title?.trim() && !photos) {
+    if (!plain.trim() && !d.title?.trim() && !mediaCount) {
       return bad("Escreva algo ou adicione uma foto.");
     }
 
-    const { points, insight, plans } = await analyzeEntry(user, plain, d.mood || null, photos);
+    if (user.coupleId && d.attachments?.length) {
+      const uploadsValidos = await validarUploadsDoCasal(
+        user.coupleId,
+        d.attachments.map((anexo) => anexo.url)
+      );
+      if (!uploadsValidos) return bad("Um dos arquivos não pertence a este casal.", 403);
+    }
 
+    const pontosBase = baseEntryPoints({
+      contentLength: plain.length,
+      hasMood: !!d.mood,
+      photos: mediaCount,
+    });
+
+    // A memória é persistida antes de qualquer chamada de IA. A pessoa recebe
+    // resposta assim que banco, pontos-base e sequência terminam; análise e
+    // comentário do Cupido continuam depois da resposta com `after()`.
     const entry = await prisma.entry.create({
       data: {
         authorId: user.id,
@@ -90,8 +134,8 @@ export async function POST(req: Request) {
         title: d.title?.trim() || null,
         content,
         mood: d.mood || null,
-        insight,
-        points,
+        insight: null,
+        points: pontosBase,
         visibility: user.coupleId ? d.visibility : "private",
         entryDate: d.entryDate ? new Date(d.entryDate) : new Date(),
         tags: JSON.stringify(d.tags ?? []),
@@ -99,35 +143,71 @@ export async function POST(req: Request) {
         lat: d.lat ?? null,
         lng: d.lng ?? null,
         attachments: d.attachments?.length
-          ? { create: d.attachments.map((a) => ({ url: a.url, type: a.type, caption: a.caption ?? null, duration: a.duration ?? null })) }
+          ? {
+              create: d.attachments.map((a) => ({
+                url: a.url,
+                type: a.type,
+                caption: a.caption ?? null,
+                duration: a.duration ?? null,
+              })),
+            }
           : undefined,
       },
       include: entryInclude,
     });
-    // A memória já existe neste ponto. Falha secundária em pontos/sequência
-    // não deve responder 500 e induzir a pessoa a publicar tudo de novo.
+
     const [, streak] = await Promise.all([
-      awardPoints(user.id, points).catch(() => null),
+      awardPoints(user.id, pontosBase).catch(() => null),
       touchStreak(user.id).catch(() => null),
     ]);
 
-    // O comentário da IA (antes era o "insight" colado no post) agora entra na
-    // thread de comentários, assinado pelo Cupido.
-    if (insight) {
-      const aiComment = await prisma.comment
-        .create({
-          data: { entryId: entry.id, aiCharacter: "cupido", content: insight },
-          include: AI_COMMENT_INCLUDE,
-        })
-        .catch(() => null);
-      if (aiComment) entry.comments.push(aiComment as any);
-    }
+    invalidarContagem(user.id);
+    for (const membro of user.couple?.members ?? []) invalidarContagem(membro.id);
 
-    // Avisa o parceiro (só o que é compartilhado)
+    after(async () => {
+      const resultado = await analyzeEntry(user, plain, d.mood || null, mediaCount).catch(() => null);
+      if (!resultado) return;
+
+      const { points, insight, plans } = resultado;
+      const atualizada = await prisma.entry
+        .update({ where: { id: entry.id }, data: { points, insight } })
+        .catch(() => null);
+      if (!atualizada) return;
+
+      const bonusIA = Math.max(0, points - pontosBase);
+      if (bonusIA > 0) await awardPoints(user.id, bonusIA).catch(() => null);
+
+      if (insight) {
+        await prisma.comment
+          .create({ data: { entryId: entry.id, aiCharacter: "cupido", content: insight } })
+          .catch(() => null);
+      }
+
+      // O antigo modal de planos dependia da resposta lenta da IA. Em segundo
+      // plano, preservamos a descoberta sem criar desejos sem consentimento:
+      // a pessoa recebe um aviso e decide o que fazer ao abrir a memória.
+      if (plans.length) {
+        const titulos = plans.slice(0, 2).map((plan) => plan.title).join(" · ");
+        await prisma.notification
+          .create({
+            data: {
+              userId: user.id,
+              kind: "summary",
+              title: "A IA percebeu um plano de vocês ✨",
+              body: titulos,
+              url: entryUrl(entry.id),
+              entityType: "entry",
+              entityId: entry.id,
+              emoji: "✨",
+            },
+          })
+          .catch(() => null);
+      }
+    });
+
     if (entry.visibility === "shared") {
       const quem = user.displayName || user.name;
       const resumo = entry.title || plain.slice(0, 90) || "Toque para ler";
-      // Memória com data retroativa: deixa claro de que dia ela é.
       const retro = isRetroactive(entry.entryDate, entry.createdAt);
       notifyPartner(user.id, user.coupleId, {
         kind: "entry",
@@ -141,8 +221,16 @@ export async function POST(req: Request) {
         emoji: retro ? "🕰️" : "📖",
       }).catch(() => {});
     }
+
     return json(
-      { entry: serializeEntry(entry, user.id), pointsAwarded: points, insight, streak, plans },
+      {
+        entry: serializeEntry(entry, user.id),
+        pointsAwarded: pontosBase,
+        insight: null,
+        streak,
+        plans: [],
+        analysisPending: true,
+      },
       201
     );
   });
