@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import "../estilos/tokens-papel.css";
 import "../estilos/molduras-editorial.css";
 import "../estilos/movimento-conteudo.css";
 import "../estilos/jogos-retrospectiva.css";
+import "../estilos/identidade-enlace-2026.css";
 import "./splash.css";
 import { ServiceWorker } from "@/componentes/RegistroServiceWorker";
 import { ThemeWatcher } from "@/componentes/ObservadorTema";
@@ -13,15 +14,15 @@ import { TelaAbertura } from "@/componentes/TelaAbertura";
 import { MotionProvider } from "@/componentes/Movimento";
 import { BRAND, TAGLINE, DESCRIPTION } from "@/nucleo/marca";
 
-const display = Fraunces({
+const display = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
 
-const body = Plus_Jakarta_Sans({
+const body = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-body",
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F6F1E8",
+  themeColor: "#F7F4EF",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
