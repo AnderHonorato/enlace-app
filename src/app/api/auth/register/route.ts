@@ -2,7 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/nucleo/prisma";
 import { hashPassword, createSession } from "@/nucleo/autenticacao";
 import { bad, json, handle } from "@/nucleo/api";
-import { clientIp, rateLimit, tooManyMessage } from "@/nucleo/limite-requisicoes";
+import { clientIp, rateLimitSecure, tooManyMessage } from "@/nucleo/limite-requisicoes";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Informe seu nome.").max(60),
@@ -12,7 +12,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   return handle(async () => {
-    const ipLimit = rateLimit(`cadastro:ip:${clientIp(req)}`, {
+    const ipLimit = await rateLimitSecure(`cadastro:ip:${clientIp(req)}`, {
       limit: 5,
       windowMs: 60 * 60_000,
       blockMs: 60 * 60_000,
