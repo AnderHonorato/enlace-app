@@ -1,23 +1,15 @@
 import { prisma } from "@/nucleo/prisma";
-import { requireUser, requireIdentity, bad, json, handle } from "@/nucleo/api";
+import { requireUser, requireIdentity, requireSameOrigin, bad, json, handle } from "@/nucleo/api";
 import { ensureChatUploadTable } from "@/nucleo/envios-conversa";
+import { baixarObjetoPrivado, removerObjetoPrivado } from "@/nucleo/uploads-privados";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const INLINE_MIMES = new Set([
-  "audio/webm",
-  "audio/ogg",
-  "audio/mpeg",
-  "audio/mp4",
-  "audio/wav",
-  "video/webm",
-  "video/mp4",
-  "video/quicktime",
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
+  "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav",
+  "video/webm", "video/mp4", "video/quicktime",
+  "image/jpeg", "image/png", "image/gif", "image/webp",
 ]);
 
 function safeName(name: string): string {
@@ -27,29 +19,41 @@ function safeName(name: string): string {
 function cabecalhosDoArquivo(nome: string, mime: string) {
   const tipoSeguro = INLINE_MIMES.has(mime) ? mime : "application/octet-stream";
   const disposicao = INLINE_MIMES.has(mime) ? "inline" : "attachment";
-
   return {
     "Accept-Ranges": "bytes",
-    "Cache-Control": "private, max-age=300, must-revalidate",
+    "Cache-Control": "private, no-store, max-age=0",
     "Content-Disposition": `${disposicao}; filename="${safeName(nome)}"`,
     "Content-Type": tipoSeguro,
     "X-Content-Type-Options": "nosniff",
     "Cross-Origin-Resource-Policy": "same-origin",
+    "Content-Security-Policy": "default-src 'none'; sandbox",
   };
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+type Contexto = { params: Promise<{ id: string }> | { id: string } };
+
+async function idDosParametros(contexto: Contexto) {
+  const params = await Promise.resolve(contexto.params);
+  return params.id;
+}
+
+export async function GET(req: Request, contexto: Contexto) {
   return handle(async () => {
     const user = await requireUser();
     if (!user.coupleId) return bad("Arquivo não encontrado.", 404);
 
     await ensureChatUploadTable();
+    const id = await idDosParametros(contexto);
     const upload = await prisma.chatUpload.findFirst({
-      where: { id: params.id, coupleId: user.coupleId },
+      where: { id, coupleId: user.coupleId },
     });
     if (!upload) return bad("Arquivo não encontrado.", 404);
 
-    const data = Buffer.from(upload.data);
+    const data = upload.storageProvider === "supabase"
+      ? await baixarObjetoPrivado(upload.storageKey || "")
+      : Buffer.from(upload.data);
+    if (!data) return bad("Arquivo não encontrado.", 404);
+
     const range = req.headers.get("range");
     const commonHeaders = cabecalhosDoArquivo(upload.name, upload.mime || "application/octet-stream");
 
@@ -83,15 +87,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   });
 }
 
-/** Remove um envio que ainda não foi anexado. Evita acumular arquivos quando
- * a pessoa tira uma mídia do rascunho antes de publicar. */
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, contexto: Contexto) {
   return handle(async () => {
+    requireSameOrigin(req);
     const user = await requireIdentity();
     await ensureChatUploadTable();
+    const id = await idDosParametros(contexto);
     const upload = await prisma.chatUpload.findUnique({
-      where: { id: params.id },
-      select: { id: true, uploaderId: true },
+      where: { id },
+      select: { id: true, uploaderId: true, storageProvider: true, storageKey: true },
     });
     if (!upload || upload.uploaderId !== user.id) return bad("Arquivo não encontrado.", 404);
 
@@ -102,6 +106,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     ]);
     if (attachment || message) return bad("Este arquivo já está em uso.", 409);
 
+    if (upload.storageProvider === "supabase") await removerObjetoPrivado(upload.storageKey);
     await prisma.chatUpload.delete({ where: { id: upload.id } });
     return json({ ok: true });
   });
