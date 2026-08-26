@@ -17,7 +17,7 @@ export async function ensureChatUploadTable(): Promise<void> {
       const sqlite = url.startsWith("file:") || !/^(postgres|postgresql):/i.test(url);
       if (!sqlite) return;
 
-      await prisma.$executeRawUnsafe(`
+      await prisma.$executeRaw`
         CREATE TABLE IF NOT EXISTS "ChatUpload" (
           "id" TEXT NOT NULL PRIMARY KEY,
           "coupleId" TEXT NOT NULL,
@@ -31,33 +31,42 @@ export async function ensureChatUploadTable(): Promise<void> {
           "category" TEXT NOT NULL DEFAULT 'chat',
           "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
-      `);
+      `;
 
       const colunas = await prisma.$queryRaw<ColunaSqlite[]>`PRAGMA table_info("ChatUpload")`;
       const nomes = new Set(colunas.map((c) => c.name));
+
       if (!nomes.has("storageProvider")) {
-        await prisma.$executeRawUnsafe(
-          `ALTER TABLE "ChatUpload" ADD COLUMN "storageProvider" TEXT NOT NULL DEFAULT 'database'`
-        );
+        await prisma.$executeRaw`
+          ALTER TABLE "ChatUpload"
+          ADD COLUMN "storageProvider" TEXT NOT NULL DEFAULT 'database'
+        `;
       }
       if (!nomes.has("storageKey")) {
-        await prisma.$executeRawUnsafe(`ALTER TABLE "ChatUpload" ADD COLUMN "storageKey" TEXT`);
+        await prisma.$executeRaw`
+          ALTER TABLE "ChatUpload"
+          ADD COLUMN "storageKey" TEXT
+        `;
       }
       if (!nomes.has("category")) {
-        await prisma.$executeRawUnsafe(
-          `ALTER TABLE "ChatUpload" ADD COLUMN "category" TEXT NOT NULL DEFAULT 'chat'`
-        );
+        await prisma.$executeRaw`
+          ALTER TABLE "ChatUpload"
+          ADD COLUMN "category" TEXT NOT NULL DEFAULT 'chat'
+        `;
       }
 
-      await prisma.$executeRawUnsafe(
-        `CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_createdAt_idx" ON "ChatUpload"("coupleId", "createdAt")`
-      );
-      await prisma.$executeRawUnsafe(
-        `CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_category_createdAt_idx" ON "ChatUpload"("coupleId", "category", "createdAt")`
-      );
-      await prisma.$executeRawUnsafe(
-        `CREATE INDEX IF NOT EXISTS "ChatUpload_uploaderId_createdAt_idx" ON "ChatUpload"("uploaderId", "createdAt")`
-      );
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_createdAt_idx"
+        ON "ChatUpload"("coupleId", "createdAt")
+      `;
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_category_createdAt_idx"
+        ON "ChatUpload"("coupleId", "category", "createdAt")
+      `;
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "ChatUpload_uploaderId_createdAt_idx"
+        ON "ChatUpload"("uploaderId", "createdAt")
+      `;
     })().catch((error) => {
       tableReady = null;
       throw error;
