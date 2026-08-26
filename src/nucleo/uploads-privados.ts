@@ -14,6 +14,10 @@ function limiteEnv(nome: string, padrao: number) {
   return Number.isFinite(valor) && valor > 0 ? Math.trunc(valor) : padrao;
 }
 
+function corpoBinario(dados: Buffer): ArrayBuffer {
+  return Uint8Array.from(dados).buffer;
+}
+
 export function categoriaUpload(valor: FormDataEntryValue | null): CategoriaUpload {
   return typeof valor === "string" && (CATEGORIAS_UPLOAD as readonly string[]).includes(valor)
     ? (valor as CategoriaUpload)
@@ -82,7 +86,7 @@ export async function enviarObjetoPrivado(chave: string, mime: string, dados: Bu
   const res = await fetch(`${cfg.base}/storage/v1/object/${cfg.bucket}/${encodeURI(chave)}`, {
     method: "POST",
     headers: { ...headersSupabase(cfg.token, mime), "x-upsert": "false" },
-    body: dados,
+    body: corpoBinario(dados),
   });
   return res.ok;
 }
