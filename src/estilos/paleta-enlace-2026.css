@@ -1,0 +1,89 @@
+/* Paleta da nova identidade visual — aplicada sem alterar dados ou lógica. */
+:root,
+[data-theme="papel"] {
+  --bg: 247 244 239;
+  --bg-2: 239 231 224;
+  --surface: 255 250 244;
+  --surface-2: 249 239 231;
+  --border: 226 210 202;
+  --border-2: 211 188 190;
+  --text: 26 22 48;
+  --text-2: 91 78 91;
+  --text-3: 151 133 140;
+  --accent: 212 106 140;
+  --accent-2: 138 74 104;
+  --accent-ink: 152 61 91;
+  --gold: 183 143 91;
+  --shadow-color: 26 22 48;
+  --ink: 26 22 48;
+}
+
+[data-theme="sepia"] {
+  --bg: 244 235 223;
+  --bg-2: 235 223 211;
+  --surface: 252 244 235;
+  --surface-2: 247 236 226;
+  --border: 221 204 194;
+  --border-2: 204 181 181;
+  --text: 35 28 48;
+  --text-2: 99 82 91;
+  --text-3: 151 132 137;
+  --accent: 190 83 118;
+  --accent-2: 128 66 95;
+  --accent-ink: 145 52 85;
+  --shadow-color: 35 28 48;
+  --ink: 35 28 48;
+}
+
+[data-theme="alvo"] {
+  --bg: 252 250 247;
+  --bg-2: 246 241 238;
+  --surface: 255 255 255;
+  --surface-2: 251 246 243;
+  --border: 232 221 217;
+  --border-2: 217 199 199;
+  --text: 26 22 48;
+  --text-2: 89 80 92;
+  --text-3: 153 142 148;
+  --accent: 212 106 140;
+  --accent-2: 138 74 104;
+  --accent-ink: 152 61 91;
+  --shadow-color: 26 22 48;
+  --ink: 26 22 48;
+}
+
+[data-theme="tinta"] {
+  --bg: 26 22 48;
+  --bg-2: 32 27 57;
+  --surface: 40 33 64;
+  --surface-2: 48 39 75;
+  --border: 72 58 87;
+  --border-2: 92 72 102;
+  --text: 247 244 239;
+  --text-2: 215 199 207;
+  --text-3: 157 137 151;
+  --accent: 225 122 153;
+  --accent-2: 185 91 126;
+  --accent-ink: 242 164 187;
+  --gold: 211 174 111;
+  --shadow-color: 8 6 18;
+  --ink: 247 244 239;
+}
+
+[data-theme="nanquim"] {
+  --bg: 15 13 30;
+  --bg-2: 21 18 39;
+  --surface: 28 23 49;
+  --surface-2: 37 30 59;
+  --border: 57 46 72;
+  --border-2: 77 60 88;
+  --text: 246 242 237;
+  --text-2: 204 191 200;
+  --text-3: 143 127 140;
+  --accent: 225 122 153;
+  --accent-2: 185 91 126;
+  --accent-ink: 242 164 187;
+  --gold: 211 174 111;
+  --shadow-color: 4 3 10;
+  --ink: 246 242 237;
+}
