@@ -132,7 +132,7 @@ export function LiveCoupleMap({ me, partner: partnerInfo }: Props) {
         lineRef.current = null;
       }
     })();
-  }, [myPos, partner, mapRef.current]);
+  }, [myPos, partner]);
 
   const meName = me.displayName || me.name;
 
