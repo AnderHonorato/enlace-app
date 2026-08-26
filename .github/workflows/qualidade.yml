@@ -3,7 +3,7 @@ name: Qualidade
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feat/100-melhorias-enlace]
 
 permissions:
   contents: read
