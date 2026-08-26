@@ -1,0 +1,44 @@
+name: Auditoria de dependências
+
+on:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/auditoria-dependencias.yml
+  push:
+    branches: [main, feat/100-melhorias-enlace]
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/auditoria-dependencias.yml
+
+permissions:
+  contents: read
+
+jobs:
+  auditar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Auditar dependências de produção
+        run: |
+          echo "=== Dependências usadas em produção ==="
+          npm audit --omit=dev --json || true
+
+      - name: Auditar árvore completa
+        run: |
+          echo "=== Produção + desenvolvimento ==="
+          npm audit --json || true
