@@ -34,11 +34,11 @@ function corpoBinario(dados: Buffer): ArrayBuffer {
   return Uint8Array.from(dados).buffer;
 }
 
-type Contexto = { params: Promise<{ id: string }> | { id: string } };
+type Contexto = { params: Promise<{ id: string }> };
 
 async function idDosParametros(contexto: Contexto) {
-  const params = await Promise.resolve(contexto.params);
-  return params.id;
+  const params = await contexto.params;
+  return (await params).id;
 }
 
 export async function GET(req: Request, contexto: Contexto) {

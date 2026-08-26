@@ -2,11 +2,11 @@ import { prisma } from "@/nucleo/prisma";
 import { requireUser, bad, json, handle } from "@/nucleo/api";
 
 /** Abre um segredo destinado a mim e revela o conteúdo. */
-export async function PUT(_req: Request, { params }: { params: { id: string } }) {
+export async function PUT(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
     const secret = await prisma.secret.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: { sender: { select: { name: true, displayName: true, avatarColor: true, avatarUrl: true } } },
     });
     if (!secret) return bad("Segredo não encontrado.", 404);

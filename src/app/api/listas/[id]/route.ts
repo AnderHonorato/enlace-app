@@ -12,10 +12,10 @@ async function ownList(id: string, coupleId: string | null) {
   return list && list.coupleId === coupleId ? list : null;
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const list = await ownList(params.id, user.coupleId);
+    const list = await ownList((await params).id, user.coupleId);
     if (!list) return bad("Lista não encontrada.", 404);
     const body = await req.json().catch(() => ({}));
     const parsed = patchSchema.safeParse(body);
@@ -29,12 +29,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const list = await ownList(params.id, user.coupleId);
+    const list = await ownList((await params).id, user.coupleId);
     if (!list) return bad("Lista não encontrada.", 404);
-    await prisma.taskList.delete({ where: { id: params.id } });
+    await prisma.taskList.delete({ where: { id: (await params).id } });
     return json({ ok: true });
   });
 }

@@ -7,22 +7,22 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const room = await refreshRabiscaRoom(params.id, user.id);
+    const room = await refreshRabiscaRoom((await params).id, user.id);
     return json({ room: await serializeRabiscaRoom(room, user.id) });
   });
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
     const move = await req.json().catch(() => ({}));
     if (!move || typeof move !== "object" || typeof move.type !== "string") {
       return bad("Ação inválida.", 400);
     }
-    const result = await applyRabiscaAction(params.id, user.id, move);
+    const result = await applyRabiscaAction((await params).id, user.id, move);
     if (!result.room) return bad("Sala não encontrada.", 404);
     return json({
       room: await serializeRabiscaRoom(result.room, user.id),

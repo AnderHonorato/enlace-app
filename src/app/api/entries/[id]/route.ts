@@ -34,19 +34,19 @@ function canSee(entry: { authorId: string; coupleId: string | null; visibility: 
   return false;
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const entry = await prisma.entry.findUnique({ where: { id: params.id }, include: entryInclude });
+    const entry = await prisma.entry.findUnique({ where: { id: (await params).id }, include: entryInclude });
     if (!entry || !canSee(entry, user)) return bad("Entrada não encontrada.", 404);
     return json({ entry: serializeEntry(entry, user.id) });
   });
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const existing = await prisma.entry.findUnique({ where: { id: params.id } });
+    const existing = await prisma.entry.findUnique({ where: { id: (await params).id } });
     if (!existing) return bad("Entrada não encontrada.", 404);
     if (existing.authorId !== user.id) return bad("Você só pode editar as suas entradas.", 403);
     if (existing.locked) return bad("Destranque a memória antes de editar.", 423);
@@ -58,14 +58,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     if (d.attachments) {
       // apaga do disco os arquivos que não estão na nova lista
-      const old = await prisma.attachment.findMany({ where: { entryId: params.id }, select: { url: true } });
+      const old = await prisma.attachment.findMany({ where: { entryId: (await params).id }, select: { url: true } });
       const keep = new Set(d.attachments.map((a) => a.url));
       await removeUploads(old.map((a) => a.url).filter((u) => !keep.has(u)));
-      await prisma.attachment.deleteMany({ where: { entryId: params.id } });
+      await prisma.attachment.deleteMany({ where: { entryId: (await params).id } });
     }
 
     const entry = await prisma.entry.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         title: d.title !== undefined ? d.title : undefined,
         content: d.content !== undefined ? sanitizeHtml(d.content) : undefined,
@@ -86,14 +86,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const existing = await prisma.entry.findUnique({ where: { id: params.id } });
+    const existing = await prisma.entry.findUnique({ where: { id: (await params).id } });
     if (!existing) return bad("Entrada não encontrada.", 404);
     if (existing.authorId !== user.id) return bad("Você só pode apagar as suas entradas.", 403);
-    const files = await prisma.attachment.findMany({ where: { entryId: params.id }, select: { url: true } });
-    await prisma.entry.delete({ where: { id: params.id } });
+    const files = await prisma.attachment.findMany({ where: { entryId: (await params).id }, select: { url: true } });
+    await prisma.entry.delete({ where: { id: (await params).id } });
     await removeUploads(files.map((a) => a.url));
     return json({ ok: true });
   });

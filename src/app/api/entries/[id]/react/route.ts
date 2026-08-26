@@ -8,10 +8,10 @@ import { toPlain } from "@/nucleo/sanitizacao";
 
 const schema = z.object({ emoji: z.string().max(8).default("❤️") });
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const entry = await prisma.entry.findUnique({ where: { id: params.id } });
+    const entry = await prisma.entry.findUnique({ where: { id: (await params).id } });
     if (!entry) return bad("Entrada não encontrada.", 404);
 
     const canSee =
@@ -23,7 +23,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const emoji = schema.parse(body).emoji;
 
     const existing = await prisma.reaction.findUnique({
-      where: { entryId_userId_emoji: { entryId: params.id, userId: user.id, emoji } },
+      where: { entryId_userId_emoji: { entryId: (await params).id, userId: user.id, emoji } },
     });
 
     let liked: boolean;
@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       await prisma.reaction.delete({ where: { id: existing.id } });
       liked = false;
     } else {
-      await prisma.reaction.create({ data: { entryId: params.id, userId: user.id, emoji } });
+      await prisma.reaction.create({ data: { entryId: (await params).id, userId: user.id, emoji } });
       await awardPoints(user.id, POINTS.reaction);
       liked = true;
 
@@ -51,7 +51,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       }).catch(() => {});
     }
 
-    const count = await prisma.reaction.count({ where: { entryId: params.id, emoji } });
+    const count = await prisma.reaction.count({ where: { entryId: (await params).id, emoji } });
     return json({ liked, count });
   });
 }

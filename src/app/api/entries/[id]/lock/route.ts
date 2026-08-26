@@ -9,10 +9,10 @@ const schema = z.object({
 });
 
 /** Tranca/destranca uma memória. A senha extra é única por usuário. */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const entry = await prisma.entry.findUnique({ where: { id: params.id } });
+    const entry = await prisma.entry.findUnique({ where: { id: (await params).id } });
     if (!entry) return bad("Memória não encontrada.", 404);
     if (entry.authorId !== user.id) return bad("Só quem escreveu pode trancar.", 403);
 
@@ -40,14 +40,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 }
 
 /** Abre uma memória trancada conferindo a senha. */
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
     const body = await req.json().catch(() => ({}));
     const parsed = schema.safeParse(body);
     if (!parsed.success) return bad(parsed.error.errors[0].message);
 
-    const entry = await prisma.entry.findUnique({ where: { id: params.id }, include: entryInclude });
+    const entry = await prisma.entry.findUnique({ where: { id: (await params).id }, include: entryInclude });
     if (!entry) return bad("Memória não encontrada.", 404);
 
     const canSee =

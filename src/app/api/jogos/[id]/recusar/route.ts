@@ -4,10 +4,10 @@ import { getSessionOr404, SESSION_INCLUDE, serializeSession } from "@/nucleo/ses
 import { GAMES, type GameSlug } from "@/nucleo/jogos";
 import { notifyPartner } from "@/nucleo/notificacoes";
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const session = await getSessionOr404(params.id, user.id);
+    const session = await getSessionOr404((await params).id, user.id);
 
     if (session.status !== "pending") return bad("Esse convite não está mais pendente.", 400);
     if (session.guestId !== user.id) return bad("Só quem foi convidado pode recusar.", 403);
