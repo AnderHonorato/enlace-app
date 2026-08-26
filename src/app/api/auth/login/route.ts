@@ -16,18 +16,25 @@ export async function POST(req: Request) {
     if (!parsed.success) return bad(parsed.error.errors[0].message);
     const { email, password } = parsed.data;
 
-    // Trava por e-mail + IP: protege a conta mesmo quando o ataque troca de IP,
-    // e não deixa um IP varrer vários e-mails.
-    const key = `login:${email}:${clientIp(req)}`;
-    const limit = rateLimit(key, { limit: 8, windowMs: 60_000, blockMs: 5 * 60_000 });
-    if (!limit.ok) return bad(tooManyMessage(limit.retryAfter), 429);
+    // Duas barreiras independentes: uma protege a conta mesmo quando o IP
+    // muda; a outra impede um único IP de varrer muitas contas diferentes.
+    const ip = clientIp(req);
+    const accountKey = `login:account:${email}`;
+    const ipKey = `login:ip:${ip}`;
+    const accountLimit = rateLimit(accountKey, { limit: 8, windowMs: 60_000, blockMs: 5 * 60_000 });
+    const ipLimit = rateLimit(ipKey, { limit: 30, windowMs: 60_000, blockMs: 5 * 60_000 });
+
+    if (!accountLimit.ok || !ipLimit.ok) {
+      return bad(tooManyMessage(Math.max(accountLimit.retryAfter, ipLimit.retryAfter)), 429);
+    }
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return bad("E-mail ou senha incorretos.", 401);
     }
 
-    rateLimitReset(key);
+    rateLimitReset(accountKey);
+    rateLimitReset(ipKey);
     await createSession(user.id);
     return json({ ok: true });
   });
