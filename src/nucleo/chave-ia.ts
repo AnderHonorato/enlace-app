@@ -59,7 +59,8 @@ export function resolveProvider(user: UsuarioComIA): { provider: AIProvider; api
 }
 
 export function selectedProvider(user: UsuarioComIA): AIProvider {
-  return isProvider(user.aiProvider) ? user.aiProvider : "openai";
+  const provider = user.aiProvider;
+  return typeof provider === "string" && isProvider(provider) ? provider : "openai";
 }
 
 export function userHasKey(user: UsuarioComIA): boolean {
