@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/nucleo/prisma";
-import { requireUser, json, bad, handle } from "@/nucleo/api";
+import { requireUser, requireSameOrigin, json, bad, handle } from "@/nucleo/api";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +73,7 @@ export async function GET() {
 /** Atualiza minha localização e status de compartilhamento. */
 export async function POST(req: Request) {
   return handle(async () => {
+    requireSameOrigin(req);
     const user = await requireUser();
     const body = await req.json().catch(() => ({}));
     const parsed = localizacaoSchema.safeParse(body);
