@@ -28,7 +28,7 @@ new_upload = '''model ChatUpload {
   name            String
   mime            String
   size            Int
-  data            Bytes?
+  data            Bytes
   storageProvider String   @default("database") // database | supabase
   storageKey      String?
   category        String   @default("chat") // chat | avatar | album | memorias
