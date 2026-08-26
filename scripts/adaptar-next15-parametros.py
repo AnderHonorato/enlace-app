@@ -4,26 +4,35 @@ import re
 RAIZ_API = Path("src/app/api")
 RAIZ_APP = Path("src/app/app")
 
-# O Next 15 passou a tipar `params` de rotas/páginas dinâmicas como Promise.
+# O Next 15 passou a tipar `params` e `searchParams` de rotas/páginas como Promise.
 # Este script é propositalmente conservador: só transforma tipos inline simples
-# e usos diretos `params.campo`. Pode ser executado várias vezes sem duplicar.
+# e usos diretos `params.campo` / `searchParams.campo`. Pode ser executado várias
+# vezes sem duplicar alterações.
 TIPO_PARAMS_SINCRONO = re.compile(r"params:\s*\{([^{}]+)\}")
+TIPO_SEARCH_PARAMS_SINCRONO = re.compile(r"searchParams:\s*\{([^{}]+)\}")
 USO_PARAMS = re.compile(r"(?<!await )\bparams\.([A-Za-z_$][A-Za-z0-9_$]*)")
+USO_SEARCH_PARAMS = re.compile(r"(?<!await )\bsearchParams\.([A-Za-z_$][A-Za-z0-9_$]*)")
 
 
-def tornar_params_promise(texto: str) -> tuple[str, bool]:
+def tornar_promise(texto: str, tipo: re.Pattern[str], nome: str) -> tuple[str, bool]:
     alterou = False
 
     def substituir_tipo(match: re.Match[str]) -> str:
         nonlocal alterou
         corpo = match.group(1)
-        # Só mexe em um objeto simples de parâmetros (id/slug/etc.).
-        if ":" not in corpo or not re.search(r"\b(string|number)\b", corpo):
+        if ":" not in corpo:
             return match.group(0)
         alterou = True
-        return f"params: Promise<{{{corpo}}}>"
+        return f"{nome}: Promise<{{{corpo}}}>"
 
-    texto = TIPO_PARAMS_SINCRONO.sub(substituir_tipo, texto)
+    return tipo.sub(substituir_tipo, texto), alterou
+
+
+def tornar_params_promise(texto: str) -> tuple[str, bool]:
+    alterou = False
+
+    texto, mudou_tipo = tornar_promise(texto, TIPO_PARAMS_SINCRONO, "params")
+    alterou = alterou or mudou_tipo
 
     # Corrige uma compatibilidade temporária criada durante a migração manual.
     uniao = "Promise<{ id: string }> | { id: string }"
@@ -36,6 +45,20 @@ def tornar_params_promise(texto: str) -> tuple[str, bool]:
 
     if "params: Promise<" in texto:
         novo = USO_PARAMS.sub(r"(await params).\1", texto)
+        if novo != texto:
+            texto = novo
+            alterou = True
+
+    return texto, alterou
+
+
+def tornar_search_params_promise(texto: str) -> tuple[str, bool]:
+    alterou = False
+    texto, mudou_tipo = tornar_promise(texto, TIPO_SEARCH_PARAMS_SINCRONO, "searchParams")
+    alterou = alterou or mudou_tipo
+
+    if "searchParams: Promise<" in texto:
+        novo = USO_SEARCH_PARAMS.sub(r"(await searchParams).\1", texto)
         if novo != texto:
             texto = novo
             alterou = True
@@ -61,7 +84,11 @@ def processar_pagina_assincrona(arquivo: Path) -> bool:
         return False
     if "async function" not in texto and "async (" not in texto:
         return False
-    novo, alterou = tornar_params_promise(texto)
+
+    novo, alterou_params = tornar_params_promise(texto)
+    novo, alterou_busca = tornar_search_params_promise(novo)
+    alterou = alterou_params or alterou_busca
+
     if alterou and novo != texto:
         arquivo.write_text(novo, encoding="utf-8")
         print(f"adaptado: {arquivo}")
@@ -69,13 +96,24 @@ def processar_pagina_assincrona(arquivo: Path) -> bool:
     return False
 
 
-def parametros_sincronos_restantes() -> list[Path]:
+def incompatibilidades_restantes() -> list[Path]:
     restantes: list[Path] = []
+
     for arquivo in RAIZ_API.rglob("route.ts"):
         texto = arquivo.read_text(encoding="utf-8")
         if TIPO_PARAMS_SINCRONO.search(texto):
             restantes.append(arquivo)
-    return restantes
+
+    if RAIZ_APP.exists():
+        for padrao in ("page.tsx", "layout.tsx"):
+            for arquivo in RAIZ_APP.rglob(padrao):
+                texto = arquivo.read_text(encoding="utf-8")
+                if '"use client"' in texto[:300] or "'use client'" in texto[:300]:
+                    continue
+                if TIPO_PARAMS_SINCRONO.search(texto) or TIPO_SEARCH_PARAMS_SINCRONO.search(texto):
+                    restantes.append(arquivo)
+
+    return sorted(set(restantes))
 
 
 def main() -> None:
@@ -89,11 +127,11 @@ def main() -> None:
             for arquivo in sorted(RAIZ_APP.rglob(padrao)):
                 alterados += int(processar_pagina_assincrona(arquivo))
 
-    restantes = parametros_sincronos_restantes()
+    restantes = incompatibilidades_restantes()
     if restantes:
         nomes = "\n".join(f" - {arquivo}" for arquivo in restantes)
         raise SystemExit(
-            "Ainda existem rotas dinâmicas com params síncrono; corrija manualmente:\n" + nomes
+            "Ainda existem páginas/rotas com parâmetros síncronos incompatíveis com Next 15:\n" + nomes
         )
 
     print(f"Migração Next 15 concluída. Arquivos alterados: {alterados}")
