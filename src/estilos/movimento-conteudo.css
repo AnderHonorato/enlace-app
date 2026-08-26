@@ -89,6 +89,36 @@
   animation: twinkle 3.2s ease-in-out infinite;
 }
 
+/* Acessibilidade: quem reduz movimento continua recebendo feedback visual,
+   mas sem pulsos, flutuações, piscadas ou transições longas. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .anim-rise,
+  .anim-riseS,
+  .anim-pop,
+  .anim-sheet,
+  .anim-flame,
+  .anim-float,
+  .anim-caret,
+  .anim-new,
+  .char-anim .eye,
+  .char-anim .twinkle {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 /* Impressão — só o livro sai no papel/PDF */
 @media print {
   aside, header, nav, .ambient-bg, .print-hide { display: none !important; }
