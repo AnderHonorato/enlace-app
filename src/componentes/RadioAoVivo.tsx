@@ -49,10 +49,12 @@ export function RadioAoVivo() {
     };
   }, [aberto, canal]);
 
-  // Se a página fechar com rádio tocando, o áudio tem que parar junto.
+  // Guarda a instância usada por este efeito. Assim o cleanup não depende de
+  // um ref que pode apontar para outro elemento quando o componente desmontar.
   useEffect(() => {
+    const audio = audioRef.current;
     return () => {
-      audioRef.current?.pause();
+      audio?.pause();
     };
   }, []);
 
