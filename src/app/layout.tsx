@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import "../estilos/tokens-papel.css";
 import "../estilos/molduras-editorial.css";
@@ -13,15 +13,15 @@ import { TelaAbertura } from "@/componentes/TelaAbertura";
 import { MotionProvider } from "@/componentes/Movimento";
 import { BRAND, TAGLINE, DESCRIPTION } from "@/nucleo/marca";
 
-const display = Fraunces({
+const display = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
 
-const body = Plus_Jakarta_Sans({
+const body = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-body",
@@ -42,20 +42,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F6F1E8",
+  themeColor: "#F7F4EF",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
 // Resolve e aplica o tema antes da pintura (evita flash).
-//
-// As listas abaixo preservam preferências de instalações antigas, que podem
-// ter 'aurora' / 'claro' / 'violet' gravados no localStorage. Essas chaves
-// não têm mais [data-theme] correspondente no CSS. Sem a validação o <html>
-// receberia um tema inexistente e cairia no :root — que por acaso é o papel
-// claro, então o modo escuro simplesmente não funcionaria. Manter em sincronia
-// com src/nucleo/themes.ts.
 const themeInit = `(function(){try{
   var LIGHT=['papel','sepia','alvo'], DARK=['tinta','nanquim'];
   var ACC=['carmim','rose','coral','gold','teal','sky','tinta'];
@@ -74,9 +67,7 @@ const themeInit = `(function(){try{
   if(bg){document.body.style.backgroundImage='url('+bg+')';document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';document.body.style.backgroundAttachment='fixed';document.body.classList.add('has-bg-photo');}
 }catch(e){}})();`;
 
-// Evita o flash da splash depois do primeiro acesso neste navegador: se a
-// instalação já viu a animação, marca o <html> antes da primeira pintura para que o CSS
-// (splash.css) esconda o overlay de cara — o mesmo truque do themeInit acima.
+// Evita repetir a tela de abertura depois do primeiro acesso neste navegador.
 const splashInit = `(function(){try{
   if(localStorage.getItem('enlace-splash')==='1'||localStorage.getItem('enlace-splash-v2')==='1'){document.documentElement.setAttribute('data-splash-seen','1');}
 }catch(e){}})();`;
