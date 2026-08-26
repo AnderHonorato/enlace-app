@@ -5,8 +5,37 @@ import { ensureChatUploadTable } from "@/nucleo/envios-conversa";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const INLINE_MIMES = new Set([
+  "audio/webm",
+  "audio/ogg",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/wav",
+  "video/webm",
+  "video/mp4",
+  "video/quicktime",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+
 function safeName(name: string): string {
   return name.replace(/[\r\n"\\]/g, "_").slice(0, 180) || "arquivo";
+}
+
+function cabecalhosDoArquivo(nome: string, mime: string) {
+  const tipoSeguro = INLINE_MIMES.has(mime) ? mime : "application/octet-stream";
+  const disposicao = INLINE_MIMES.has(mime) ? "inline" : "attachment";
+
+  return {
+    "Accept-Ranges": "bytes",
+    "Cache-Control": "private, max-age=300, must-revalidate",
+    "Content-Disposition": `${disposicao}; filename="${safeName(nome)}"`,
+    "Content-Type": tipoSeguro,
+    "X-Content-Type-Options": "nosniff",
+    "Cross-Origin-Resource-Policy": "same-origin",
+  };
 }
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -22,13 +51,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
     const data = Buffer.from(upload.data);
     const range = req.headers.get("range");
-    const commonHeaders = {
-      "Accept-Ranges": "bytes",
-      "Cache-Control": "private, max-age=31536000, immutable",
-      "Content-Disposition": `inline; filename="${safeName(upload.name)}"`,
-      "Content-Type": upload.mime || "application/octet-stream",
-      "X-Content-Type-Options": "nosniff",
-    };
+    const commonHeaders = cabecalhosDoArquivo(upload.name, upload.mime || "application/octet-stream");
 
     if (range) {
       const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
