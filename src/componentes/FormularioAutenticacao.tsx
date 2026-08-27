@@ -1,12 +1,14 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, Loader2 } from "lucide-react";
 import { Logo } from "./Logo";
 import { api } from "@/nucleo/cliente";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
+  const router = useRouter();
   const isReg = mode === "register";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,7 +25,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         method: "POST",
         body: JSON.stringify(isReg ? { name, email, password } : { email, password }),
       });
-      window.location.assign("/app");
+      router.replace("/app");
     } catch (err: any) {
       setError(err.message || "Não foi possível continuar.");
       setLoading(false);
