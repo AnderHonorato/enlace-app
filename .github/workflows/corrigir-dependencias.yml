@@ -1,4 +1,4 @@
-name: Corrigir dependências vulneráveis
+name: Migrar com segurança para Next 16
 
 on:
   push:
@@ -11,23 +11,23 @@ permissions:
   contents: write
 
 env:
-  DATABASE_URL: file:./prisma/deps-ci.db
-  APP_SECRET: enlace-ci-enlace-ci-enlace-ci-enlace-ci
+  DATABASE_URL: file:./prisma/next16-ci.db
+  APP_SECRET: enlace-ci-next16-validacao-segura
 
 jobs:
-  corrigir:
+  migrar:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Baixar código
         uses: actions/checkout@v5
         with:
           ref: feat/100-melhorias-enlace
 
-      - name: Preparar Node
+      - name: Preparar Node compatível
         uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 20.20.2
           cache: npm
 
       - name: Instalar estado atual
@@ -36,19 +36,46 @@ jobs:
       - name: Remover dependência ngrok não utilizada
         run: npm uninstall ngrok --save-dev
 
-      - name: Atualizar PostCSS direto
-        run: npm install --save-dev postcss@^8.5.23
+      - name: Migrar Next e React
+        run: npm install next@16.3.3 react@19.2.0 react-dom@19.2.0
 
-      - name: Corrigir transitivos vulneráveis do Next sem trocar de major
+      - name: Atualizar ferramentas compatíveis
+        run: npm install --save-dev eslint@^9 eslint-config-next@16.3.3 @types/react@^19 @types/react-dom@^19 postcss@^8.5.23
+
+      - name: Migrar ESLint para Flat Config
         run: |
-          npm pkg set "overrides.next.postcss=^8.5.23"
-          npm pkg set "overrides.next.nanoid=^3.3.18"
-          npm install --package-lock-only
+          cat > eslint.config.mjs <<'EOF'
+          import { defineConfig, globalIgnores } from "eslint/config";
+          import nextVitals from "eslint-config-next/core-web-vitals";
+
+          export default defineConfig([
+            ...nextVitals,
+            {
+              rules: {
+                "react/no-unescaped-entities": "off",
+              },
+            },
+            globalIgnores([
+              ".next/**",
+              ".next-build/**",
+              ".next-preview/**",
+              "out/**",
+              "build/**",
+              "next-env.d.ts",
+            ]),
+          ]);
+          EOF
+          rm -f .eslintrc.json
+          npm pkg set "scripts.lint=eslint src"
 
       - name: Reinstalar exatamente pelo lockfile atualizado
         run: |
           rm -rf node_modules
           npm ci
+
+      - name: Confirmar versões migradas
+        run: |
+          node -e "const p=require('./package.json'); console.log({next:p.dependencies.next,react:p.dependencies.react,reactDom:p.dependencies['react-dom'],eslint:p.devDependencies.eslint,eslintNext:p.devDependencies['eslint-config-next']})"
 
       - name: Exigir auditoria limpa em produção
         run: npm audit --omit=dev --audit-level=moderate
@@ -71,14 +98,14 @@ jobs:
       - name: Verificar arquitetura
         run: npm run arquitetura:verificar
 
-      - name: Compilar aplicação
+      - name: Compilar aplicação com Next 16
         run: npm run build
 
       - name: Registrar apenas se tudo estiver verde
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
+          git add package.json package-lock.json eslint.config.mjs .eslintrc.json
           git diff --cached --quiet && exit 0
-          git commit -m "seguranca: remover dependencias vulneraveis"
+          git commit -m "seguranca: migrar para Next 16 e zerar vulnerabilidades"
           git push origin HEAD:feat/100-melhorias-enlace
