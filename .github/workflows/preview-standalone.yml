@@ -1,0 +1,67 @@
+name: Preview standalone
+
+on:
+  push:
+    branches: [feat/100-melhorias-enlace]
+    paths:
+      - .github/workflows/preview-standalone.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: file:./prisma/preview.db
+      APP_SECRET: preview-local-enlace-preview-local-enlace
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v5
+
+      - name: Preparar Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20.20.2
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Preparar banco de demonstração
+        run: |
+          npx prisma db push --skip-generate
+          npm run db:seed
+
+      - name: Ativar build standalone apenas para a prévia
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('next.config.mjs')
+          text = p.read_text()
+          marker = 'const nextConfig = {\n'
+          if 'output: "standalone"' not in text:
+              text = text.replace(marker, marker + '  output: "standalone",\n', 1)
+          p.write_text(text)
+          PY
+
+      - name: Compilar prévia
+        run: npm run build
+
+      - name: Montar pacote executável
+        run: |
+          mkdir -p .next/standalone/.next
+          cp -R .next/static .next/standalone/.next/static
+          if [ -d public ]; then cp -R public .next/standalone/public; fi
+          mkdir -p .next/standalone/prisma
+          cp prisma/preview.db .next/standalone/prisma/preview.db
+
+      - name: Publicar artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: enlace-preview-standalone
+          path: .next/standalone
+          retention-days: 1
+          compression-level: 6
