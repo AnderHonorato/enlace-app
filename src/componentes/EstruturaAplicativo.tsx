@@ -101,11 +101,6 @@ function statLine(me: Me) {
   return "Primeira página";
 }
 
-async function logout() {
-  await api("/api/auth/logout", { method: "POST" }).catch(() => {});
-  window.location.assign("/entrar");
-}
-
 function isActive(pathname: string, href: string, exact?: boolean) {
   return exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 }
@@ -136,6 +131,10 @@ function ActiveShard() {
 export function EstruturaAplicativo({ me, unread: initialUnread = 0, children }: { me: Me; unread?: number; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const logout = async () => {
+    await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+    router.replace("/entrar");
+  };
   const searchParams = useSearchParams();
   const reduzirMovimento = useReducedMotion();
   const [unread, setUnread] = useState(initialUnread);
