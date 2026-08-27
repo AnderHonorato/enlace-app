@@ -89,7 +89,7 @@ jobs:
           CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
           test -n "$CHROME_PATH"
           export CHROME_PATH
-          cat >/tmp/capturar-preview.cjs <<'JS'
+          cat >capturar-preview.cjs <<'JS'
           const { chromium } = require('playwright-core');
           const base = 'http://127.0.0.1:3000';
 
@@ -117,7 +117,7 @@ jobs:
             await page.screenshot({ path: 'preview-login-desktop.png' });
             await autenticar(desktop);
             await page.goto(base + '/app', { waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(2500);
+            await page.waitForTimeout(3500);
             await page.screenshot({ path: 'preview-app-desktop.png' });
             await desktop.close();
 
@@ -129,13 +129,13 @@ jobs:
             await autenticar(mobile);
             page = await mobile.newPage();
             await page.goto(base + '/app', { waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(2500);
+            await page.waitForTimeout(3500);
             await page.screenshot({ path: 'preview-app-mobile.png' });
             await mobile.close();
             await browser.close();
           })().catch((erro) => { console.error(erro); process.exit(1); });
           JS
-          node /tmp/capturar-preview.cjs
+          node capturar-preview.cjs
 
       - name: Publicar screenshots
         uses: actions/upload-artifact@v4
