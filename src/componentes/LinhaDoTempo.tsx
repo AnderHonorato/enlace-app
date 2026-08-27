@@ -201,7 +201,7 @@ export function LinhaDoTempo({
   const watermark = useMemo(() => (lastFeedSeenAt ? new Date(lastFeedSeenAt).getTime() : 0), [lastFeedSeenAt]);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const maxSeenAt = useRef(watermark);
-  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const isNew = (e: EntryDTO) =>
     !e.isMine && new Date(e.createdAt).getTime() > watermark && !seenIds.has(e.id);

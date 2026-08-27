@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { cn } from "@/nucleo/utilitarios";
 
 // Ilustrações vetoriais dos personagens de IA do Amora.
@@ -34,7 +35,7 @@ const eyeSleep = (x: number, y: number) => (
 const eyeDot = (x: number, y: number, c = "#3a2b4d") => <circle className="eye" cx={x} cy={y} r="3.1" fill={c} />;
 const blush = (x: number, y: number, c: string) => <ellipse cx={x} cy={y} rx="5" ry="3.2" fill={c} opacity="0.5" />;
 
-const ART: Record<string, () => JSX.Element> = {
+const ART: Record<string, () => ReactElement> = {
   lua: () => (
     <>
       <defs>

@@ -21,7 +21,7 @@ export function RadioPage({ coupled }: { coupled: boolean }) {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
