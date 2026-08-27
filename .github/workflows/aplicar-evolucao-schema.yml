@@ -1,4 +1,4 @@
-name: Aplicar evolução e validar Next 15
+name: Aplicar evolução e validar Next 16
 
 on:
   push:
@@ -8,13 +8,14 @@ on:
       - scripts/adaptar-next15-parametros.py
       - scripts/evoluir-schema-auditoria.py
       - scripts/corrigir-warnings-hooks.py
+      - scripts/corrigir-navegacao-next16.py
 
 permissions:
   contents: write
 
 env:
   DATABASE_URL: file:./prisma/schema-evolution-ci.db
-  APP_SECRET: enlace-ci-enlace-ci-enlace-ci-enlace-ci
+  APP_SECRET: enlace-ci-evolucao-validacao-segura
 
 jobs:
   evoluir:
@@ -22,24 +23,27 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Baixar código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: feat/100-melhorias-enlace
 
       - name: Preparar Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 20.20.2
           cache: npm
 
       - name: Instalar dependências
         run: npm ci
 
-      - name: Adaptar parâmetros dinâmicos ao Next 15
+      - name: Garantir parâmetros dinâmicos compatíveis
         run: python3 scripts/adaptar-next15-parametros.py
 
       - name: Corrigir warnings seguros de hooks
         run: python3 scripts/corrigir-warnings-hooks.py
+
+      - name: Corrigir navegação interna do Next 16
+        run: python3 scripts/corrigir-navegacao-next16.py
 
       - name: Evoluir schema sem remover dados
         run: python3 scripts/evoluir-schema-auditoria.py
@@ -70,5 +74,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add prisma/schema.prisma src/app/api src/app/app src/componentes
           git diff --cached --quiet && exit 0
-          git commit -m "fix: aplicar correções validadas de compatibilidade e hooks"
+          git commit -m "fix: aplicar correções validadas de compatibilidade e navegação"
           git push origin HEAD:feat/100-melhorias-enlace
