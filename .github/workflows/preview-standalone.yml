@@ -63,5 +63,6 @@ jobs:
         with:
           name: enlace-preview-standalone
           path: .next/standalone
+          include-hidden-files: true
           retention-days: 1
           compression-level: 6
