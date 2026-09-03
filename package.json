@@ -2,11 +2,11 @@
   "name": "enlace-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Enlace — diário privado para casais, com visual de papel e tinta.",
+  "description": "Only Nós — diário privado para casais, com visual de papel e tinta.",
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3007",
     "dev:local": "next dev -p 3007",
-    "build": "prisma generate && next build",
+    "build": "node scripts/preparar-prisma-ambiente.mjs && prisma generate && next build",
     "build:check": "set NEXT_DIST_DIR=.next-build&& next build",
     "preview": "set NEXT_DIST_DIR=.next-preview&& next dev -p 3008",
     "start": "next start",
