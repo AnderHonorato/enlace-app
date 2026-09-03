@@ -17,7 +17,7 @@
     "db:testar-importacao": "node scripts/testar-importacao-banco.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/preparar-prisma-ambiente.mjs && prisma generate",
     "musicas": "node scripts/gerar-musicas.mjs",
     "musicas:dividir": "node scripts/dividir-catalogo-musical.mjs",
     "quiz:check": "tsx scripts/valida-quiz.ts",
