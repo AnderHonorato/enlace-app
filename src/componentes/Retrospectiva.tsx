@@ -93,7 +93,7 @@ export function Retrospectiva({
   const [results, setResults] = useState<ResultadoBuscaMusica[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function doSearch(q: string) {
     if (!q.trim()) { setResults([]); setSearchError(""); return; }

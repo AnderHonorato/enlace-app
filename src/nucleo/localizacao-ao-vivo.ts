@@ -28,11 +28,11 @@ export function useLiveLocation(meId: string) {
   const pollRef = useRef<any>(null);
 
   const syncPosition = useCallback(
-    (lat: number, lng: number) => {
+    (lat: number, lng: number, precisao?: number) => {
       setMyPos({ lat, lng });
-      api("/api/localizacao-ao-vivo", {
+      api("/api/live-location", {
         method: "POST",
-        body: JSON.stringify({ lat, lng, sharing: true }),
+        body: JSON.stringify({ lat, lng, precisao, sharing: true }),
       }).catch(() => {});
     },
     []
@@ -71,10 +71,10 @@ export function useLiveLocation(meId: string) {
         (pos) => {
           setLocating(false);
           setSharing(true);
-          syncPosition(pos.coords.latitude, pos.coords.longitude);
+          syncPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
           watchRef.current = navigator.geolocation.watchPosition(
             (p) => {
-              syncPosition(p.coords.latitude, p.coords.longitude);
+              syncPosition(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
             },
             (err) => {
               if (err.code === 1) {
@@ -105,7 +105,7 @@ export function useLiveLocation(meId: string) {
     }
     setSharing(false);
     setMyPos(null);
-    api("/api/localizacao-ao-vivo", {
+    api("/api/live-location", {
       method: "POST",
       body: JSON.stringify({ sharing: false }),
     }).catch(() => {});
@@ -132,7 +132,7 @@ export function useLiveLocation(meId: string) {
     if (!sharing || !myPos) return;
     const id = setInterval(() => {
       if (document.visibilityState === "hidden") return;
-      api("/api/localizacao-ao-vivo", {
+      api("/api/live-location", {
         method: "POST",
         body: JSON.stringify({ lat: myPos.lat, lng: myPos.lng, sharing: true }),
       }).catch(() => {});

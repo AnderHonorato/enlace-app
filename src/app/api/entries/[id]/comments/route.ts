@@ -16,10 +16,13 @@ const schema = z
     message: "Escreva um comentário ou adicione uma foto.",
   });
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+type ContextoRota = { params: Promise<{ id: string }> };
+
+export async function POST(req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
-    const entry = await prisma.entry.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const entry = await prisma.entry.findUnique({ where: { id } });
     if (!entry) return bad("Entrada não encontrada.", 404);
 
     const canSee =
@@ -34,7 +37,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const images = parsed.data.images ?? [];
     const comment = await prisma.comment.create({
       data: {
-        entryId: params.id,
+        entryId: id,
         authorId: user.id,
         content: parsed.data.content,
         images: JSON.stringify(images),
@@ -51,7 +54,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Avisa o autor da memória e quem mais já comentou nela (menos você).
     // Comentários da IA têm authorId nulo — não entram como destinatário.
     const outros = await prisma.comment.findMany({
-      where: { entryId: params.id, authorId: { notIn: [user.id, entry.authorId] } },
+      where: { entryId: id, authorId: { notIn: [user.id, entry.authorId] } },
       select: { authorId: true },
       distinct: ["authorId"],
     });

@@ -4,7 +4,14 @@ import { isProvider, type AIProvider } from "./ia";
 
 const PROVIDER_KEYS: AIProvider[] = ["openai", "deepseek", "anthropic"];
 
-function keyForProvider(user: any, provider: AIProvider): string {
+type UsuarioComIA = {
+  aiProvider?: string | null;
+  aiKeyOpenai?: string | null;
+  aiKeyDeepseek?: string | null;
+  aiKeyAnthropic?: string | null;
+};
+
+function keyForProvider(user: UsuarioComIA, provider: AIProvider): string {
   const dbField =
     provider === "openai"
       ? user.aiKeyOpenai
@@ -26,12 +33,12 @@ function keyForProvider(user: any, provider: AIProvider): string {
 // Resolve a chave de IA: primeiro a do usuário (no banco, criptografada);
 // se não houver, usa uma chave global do ambiente (.env) como fallback.
 // Se o provedor escolhido não tiver chave, tenta outros provedores.
-export function resolveApiKey(user: any, provider: AIProvider): string {
+export function resolveApiKey(user: UsuarioComIA, provider: AIProvider): string {
   return keyForProvider(user, provider) || resolveAnyKey(user);
 }
 
 /** Resolve qualquer chave de IA disponível (fallback entre provedores). */
-export function resolveAnyKey(user: any): string {
+export function resolveAnyKey(user: UsuarioComIA): string {
   for (const p of PROVIDER_KEYS) {
     const key = keyForProvider(user, p);
     if (key) return key;
@@ -40,7 +47,7 @@ export function resolveAnyKey(user: any): string {
 }
 
 /** Encontra o provedor que tem chave, ou retorna o escolhido pelo usuário. */
-export function resolveProvider(user: any): { provider: AIProvider; apiKey: string } {
+export function resolveProvider(user: UsuarioComIA): { provider: AIProvider; apiKey: string } {
   const preferred = selectedProvider(user);
   const key = keyForProvider(user, preferred);
   if (key) return { provider: preferred, apiKey: key };
@@ -51,10 +58,11 @@ export function resolveProvider(user: any): { provider: AIProvider; apiKey: stri
   return { provider: "openai", apiKey: "" };
 }
 
-export function selectedProvider(user: any): AIProvider {
-  return (isProvider(user.aiProvider) ? user.aiProvider : "openai") as AIProvider;
+export function selectedProvider(user: UsuarioComIA): AIProvider {
+  const provider = user.aiProvider;
+  return typeof provider === "string" && isProvider(provider) ? provider : "openai";
 }
 
-export function userHasKey(user: any): boolean {
+export function userHasKey(user: UsuarioComIA): boolean {
   return !!resolveAnyKey(user);
 }

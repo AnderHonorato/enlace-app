@@ -9,10 +9,10 @@ const patchSchema = z.object({
   done: z.boolean().optional(),
 });
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const wish = await prisma.wish.findUnique({ where: { id: params.id } });
+    const wish = await prisma.wish.findUnique({ where: { id: (await params).id } });
     if (!wish || wish.coupleId !== user.coupleId) return bad("Desejo não encontrado.", 404);
     const body = await req.json().catch(() => ({}));
     const parsed = patchSchema.safeParse(body);
@@ -22,10 +22,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const wish = await prisma.wish.findUnique({ where: { id: params.id } });
+    const wish = await prisma.wish.findUnique({ where: { id: (await params).id } });
     if (!wish || wish.coupleId !== user.coupleId) return bad("Desejo não encontrado.", 404);
     await prisma.wish.delete({ where: { id: wish.id } });
     return json({ ok: true });

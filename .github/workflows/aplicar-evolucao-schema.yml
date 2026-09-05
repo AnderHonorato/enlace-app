@@ -1,0 +1,78 @@
+name: Aplicar evolução e validar Next 16
+
+on:
+  push:
+    branches: [feat/100-melhorias-enlace]
+    paths:
+      - .github/workflows/aplicar-evolucao-schema.yml
+      - scripts/adaptar-next15-parametros.py
+      - scripts/evoluir-schema-auditoria.py
+      - scripts/corrigir-warnings-hooks.py
+      - scripts/corrigir-navegacao-next16.py
+
+permissions:
+  contents: write
+
+env:
+  DATABASE_URL: file:./prisma/schema-evolution-ci.db
+  APP_SECRET: enlace-ci-evolucao-validacao-segura
+
+jobs:
+  evoluir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v5
+        with:
+          ref: feat/100-melhorias-enlace
+
+      - name: Preparar Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20.20.2
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Garantir parâmetros dinâmicos compatíveis
+        run: python3 scripts/adaptar-next15-parametros.py
+
+      - name: Corrigir warnings seguros de hooks
+        run: python3 scripts/corrigir-warnings-hooks.py
+
+      - name: Corrigir navegação interna do Next 16
+        run: python3 scripts/corrigir-navegacao-next16.py
+
+      - name: Evoluir schema sem remover dados
+        run: python3 scripts/evoluir-schema-auditoria.py
+
+      - name: Formatar e validar schema
+        run: |
+          npx prisma format --schema prisma/schema.prisma
+          npx prisma validate --schema prisma/schema.prisma
+
+      - name: Verificar lint
+        run: npm run lint
+
+      - name: Verificar TypeScript
+        run: npm run typecheck
+
+      - name: Executar testes
+        run: npm run test
+
+      - name: Verificar arquitetura
+        run: npm run arquitetura:verificar
+
+      - name: Compilar aplicação
+        run: npm run build
+
+      - name: Registrar alterações validadas
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add prisma/schema.prisma src/app/api src/app/app src/componentes
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: aplicar correções validadas de compatibilidade e navegação"
+          git push origin HEAD:feat/100-melhorias-enlace

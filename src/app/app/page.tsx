@@ -14,8 +14,9 @@ export const dynamic = "force-dynamic";
 export default async function TimelinePage({
   searchParams,
 }: {
-  searchParams?: { memoria?: string };
+  searchParams?: Promise<{ memoria?: string }>;
 }) {
+  const searchParamsResolvidos = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
   const me = serializeMe(user);
@@ -72,7 +73,7 @@ export default async function TimelinePage({
 
   // Uma notificação pode apontar para uma memória antiga, fora da primeira
   // página. Trazemos apenas esse cartão extra e mantemos o cursor normal.
-  const targetId = typeof searchParams?.memoria === "string" ? searchParams.memoria : null;
+  const targetId = typeof searchParamsResolvidos?.memoria === "string" ? searchParamsResolvidos?.memoria : null;
   const targetRow =
     targetId && !pageRows.some((entry) => entry.id === targetId)
       ? await prisma.entry.findFirst({ where: { AND: [where, { id: targetId }] }, include: entryInclude })

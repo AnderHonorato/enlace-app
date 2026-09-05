@@ -8,11 +8,11 @@ import { EditorMemoria } from "@/componentes/EditorMemoria";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Editar memória · Enlace" };
 
-export default async function EditarPage({ params }: { params: { id: string } }) {
+export default async function EditarPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
   const me = serializeMe(user);
-  const entry = await prisma.entry.findUnique({ where: { id: params.id }, include: entryInclude });
+  const entry = await prisma.entry.findUnique({ where: { id: (await params).id }, include: entryInclude });
   if (!entry || entry.authorId !== user.id) notFound();
   // Editar o DTO oculto substituiria texto e anexos por vazio. A memória deve
   // ser realmente destrancada na Home antes de entrar no editor.

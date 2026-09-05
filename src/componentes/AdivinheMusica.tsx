@@ -169,8 +169,9 @@ export function AdivinheMusica() {
   // Ao trocar de música, o áudio anterior tem que parar — senão duas músicas
   // tocam juntas quando a pessoa pula rápido.
   useEffect(() => {
+    const audio = audioRef.current;
     return () => {
-      audioRef.current?.pause();
+      audio?.pause();
     };
   }, [currentIndex]);
 

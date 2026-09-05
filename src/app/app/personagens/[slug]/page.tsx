@@ -7,8 +7,8 @@ import { ChatRoom } from "@/componentes/SalaConversa";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const c = characterOf(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const c = characterOf((await params).slug);
   return { title: c ? `${c.name} · Enlace` : "Personagem · Enlace" };
 }
 
@@ -16,13 +16,14 @@ export default async function ChatPage({
   params,
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: { ctx?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ ctx?: string }>;
 }) {
+  const searchParamsResolvidos = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
   const me = serializeMe(user);
-  const character = characterOf(params.slug);
+  const character = characterOf((await params).slug);
   if (!character) notFound();
 
   const history = await prisma.chatMessage.findMany({
@@ -43,7 +44,7 @@ export default async function ChatPage({
       }}
       initial={history.map((m) => ({ id: m.id, role: m.role as "user" | "assistant", content: m.content }))}
       hasKey={me.hasAiKey}
-      opener={typeof searchParams.ctx === "string" ? searchParams.ctx.slice(0, 400) : undefined}
+      opener={typeof searchParamsResolvidos.ctx === "string" ? searchParamsResolvidos.ctx.slice(0, 400) : undefined}
     />
   );
 }

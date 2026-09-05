@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { BackgroundPicker } from "./FotoFundo";
 import { api } from "@/nucleo/cliente";
@@ -12,6 +13,8 @@ import { SecaoPrivacidade } from "./configuracoes/Privacidade";
 import { SecaoRelacionamento } from "./configuracoes/Relacionamento";
 
 export function Configuracoes({ me }: { me: Me }) {
+  const router = useRouter();
+
   return (
     <div className="space-y-5">
       <div className="kicker">Conta e preferências</div>
@@ -26,7 +29,7 @@ export function Configuracoes({ me }: { me: Me }) {
       <button
         onClick={async () => {
           await api("/api/auth/logout", { method: "POST" }).catch(() => {});
-          window.location.assign("/entrar");
+          router.replace("/entrar");
         }}
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface py-3 font-medium text-text transition hover:bg-surface2"
       >

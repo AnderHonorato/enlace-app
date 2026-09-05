@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   User as UserIcon,
@@ -57,6 +58,7 @@ import type { Me } from "@/nucleo/usuario-atual";
 import { BlocoConfiguracao, paraDataDeFormulario, CampoTexto, BotaoSalvar } from "./Comuns";
 
 export function SecaoConta({ me }: { me: Me }) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function del() {
@@ -74,7 +76,7 @@ export function SecaoConta({ me }: { me: Me }) {
     setBusy(true);
     try {
       await api("/api/account", { method: "DELETE" });
-      window.location.assign("/");
+      router.replace("/");
     } catch (err: any) {
       toast(err.message, "error");
       setBusy(false);

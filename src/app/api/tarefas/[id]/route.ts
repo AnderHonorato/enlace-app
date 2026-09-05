@@ -16,10 +16,10 @@ async function ownTask(id: string, coupleId: string | null) {
   return task && task.list.coupleId === coupleId ? task : null;
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const task = await ownTask(params.id, user.coupleId);
+    const task = await ownTask((await params).id, user.coupleId);
     if (!task) return bad("Tarefa não encontrada.", 404);
 
     const body = await req.json().catch(() => ({}));
@@ -41,14 +41,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
     // Permite deletar se for autor OU se ambos estão no casal
-    const task = await prisma.taskItem.findUnique({ where: { id: params.id }, include: { list: true } });
+    const task = await prisma.taskItem.findUnique({ where: { id: (await params).id }, include: { list: true } });
     if (!task || task.list.coupleId !== user.coupleId) return bad("Tarefa não encontrada.", 404);
 
-    await prisma.taskItem.delete({ where: { id: params.id } });
+    await prisma.taskItem.delete({ where: { id: (await params).id } });
     return json({ ok: true });
   });
 }

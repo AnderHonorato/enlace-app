@@ -6,14 +6,16 @@ import { POINTS } from "@/nucleo/pontos";
 import { notify, commentUrl } from "@/nucleo/notificacoes";
 
 const schema = z.object({ emoji: z.string().max(8).default("❤️") });
+type ContextoRota = { params: Promise<{ id: string }> };
 
 /** Curte / descurte um comentário. */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
+    const { id } = await params;
 
     const comment = await prisma.comment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         entry: { select: { id: true, authorId: true, coupleId: true, visibility: true } },
         author: { select: { id: true } },
@@ -31,7 +33,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const emoji = schema.parse(body).emoji;
 
     const existing = await prisma.commentLike.findUnique({
-      where: { commentId_userId: { commentId: params.id, userId: user.id } },
+      where: { commentId_userId: { commentId: id, userId: user.id } },
     });
 
     let liked: boolean;
@@ -39,7 +41,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       await prisma.commentLike.delete({ where: { id: existing.id } });
       liked = false;
     } else {
-      await prisma.commentLike.create({ data: { commentId: params.id, userId: user.id, emoji } });
+      await prisma.commentLike.create({ data: { commentId: id, userId: user.id, emoji } });
       await awardPoints(user.id, POINTS.reaction);
       liked = true;
 
@@ -59,7 +61,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       }
     }
 
-    const count = await prisma.commentLike.count({ where: { commentId: params.id } });
+    const count = await prisma.commentLike.count({ where: { commentId: id } });
     return json({ liked, count });
   });
 }

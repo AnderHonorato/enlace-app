@@ -24,10 +24,10 @@ async function facesParaMemoria(coupleId: string): Promise<string[]> {
   return urls;
 }
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const session = await getSessionOr404(params.id, user.id);
+    const session = await getSessionOr404((await params).id, user.id);
 
     if (session.status !== "pending") return bad("Esse convite não está mais pendente.", 400);
     if (session.guestId !== user.id) return bad("Só quem foi convidado pode aceitar.", 403);

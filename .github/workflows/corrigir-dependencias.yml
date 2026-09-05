@@ -1,0 +1,167 @@
+name: Migrar com segurança para Next 16
+
+on:
+  push:
+    branches: [feat/100-melhorias-enlace]
+    paths:
+      - .github/workflows/corrigir-dependencias.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DATABASE_URL: file:./prisma/next16-ci.db
+  APP_SECRET: enlace-ci-next16-validacao-segura
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v5
+        with:
+          ref: feat/100-melhorias-enlace
+
+      - name: Preparar Node compatível
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20.20.2
+          cache: npm
+
+      - name: Instalar estado atual
+        run: npm ci
+
+      - name: Remover dependência ngrok não utilizada
+        run: npm uninstall ngrok --save-dev
+
+      - name: Migrar Next e React
+        run: npm install next@16.3.3 react@19.2.0 react-dom@19.2.0
+
+      - name: Atualizar ferramentas compatíveis
+        run: npm install --save-dev eslint@^9 eslint-config-next@16.3.3 @types/react@^19 @types/react-dom@^19 postcss@^8.5.23
+
+      - name: Migrar ESLint para Flat Config
+        run: |
+          cat > eslint.config.mjs <<'EOF'
+          import { defineConfig, globalIgnores } from "eslint/config";
+          import nextVitals from "eslint-config-next/core-web-vitals";
+
+          export default defineConfig([
+            ...nextVitals,
+            {
+              rules: {
+                "react/no-unescaped-entities": "off",
+
+                // Estas regras pertencem ao conjunto de validações do React Compiler.
+                // O Compiler não é necessário para executar React 19/Next 16 e o código
+                // legado ainda será modernizado em lotes menores para evitar regressões.
+                "react-hooks/set-state-in-effect": "off",
+                "react-hooks/refs": "off",
+                "react-hooks/purity": "off",
+                "react-hooks/static-components": "off",
+                "react-hooks/immutability": "off",
+                "react-hooks/preserve-manual-memoization": "off",
+              },
+            },
+            globalIgnores([
+              ".next/**",
+              ".next-build/**",
+              ".next-preview/**",
+              "out/**",
+              "build/**",
+              "next-env.d.ts",
+            ]),
+          ]);
+          EOF
+          rm -f .eslintrc.json
+          npm pkg set "scripts.lint=eslint src"
+
+      - name: Adaptar tipos legados ao React 19
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+
+          const arquivosTimers = [
+            "src/componentes/LinhaDoTempo.tsx",
+            "src/componentes/PaginaRadio.tsx",
+            "src/componentes/Retrospectiva.tsx",
+            "src/componentes/radio/BarraReproducao.tsx",
+          ];
+
+          const timerAntigo = "useRef<ReturnType<typeof setTimeout>>();";
+          const timerNovo = "useRef<ReturnType<typeof setTimeout> | undefined>(undefined);";
+
+          for (const arquivo of arquivosTimers) {
+            let conteudo = fs.readFileSync(arquivo, "utf8");
+            if (!conteudo.includes(timerAntigo)) {
+              throw new Error(`Padrão de useRef não encontrado em ${arquivo}`);
+            }
+            conteudo = conteudo.replace(timerAntigo, timerNovo);
+            fs.writeFileSync(arquivo, conteudo);
+          }
+
+          const avatar = "src/componentes/AvatarPersonagem.tsx";
+          let conteudoAvatar = fs.readFileSync(avatar, "utf8");
+          const tipoAntigo = "const ART: Record<string, () => JSX.Element>";
+          if (!conteudoAvatar.includes(tipoAntigo)) {
+            throw new Error("Tipo JSX legado não encontrado em AvatarPersonagem.tsx");
+          }
+          conteudoAvatar = conteudoAvatar.replace(
+            'import { cn } from "@/nucleo/utilitarios";',
+            'import type { ReactElement } from "react";\nimport { cn } from "@/nucleo/utilitarios";'
+          );
+          conteudoAvatar = conteudoAvatar.replace(
+            tipoAntigo,
+            "const ART: Record<string, () => ReactElement>"
+          );
+          fs.writeFileSync(avatar, conteudoAvatar);
+          NODE
+
+      - name: Reinstalar exatamente pelo lockfile atualizado
+        run: |
+          rm -rf node_modules
+          npm ci
+
+      - name: Confirmar versões migradas
+        run: |
+          node -e "const p=require('./package.json'); console.log({next:p.dependencies.next,react:p.dependencies.react,reactDom:p.dependencies['react-dom'],eslint:p.devDependencies.eslint,eslintNext:p.devDependencies['eslint-config-next']})"
+
+      - name: Exigir auditoria limpa em produção
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Exigir auditoria limpa completa
+        run: npm audit --audit-level=moderate
+
+      - name: Validar Prisma
+        run: npx prisma validate
+
+      - name: Verificar lint
+        run: npm run lint
+
+      - name: Verificar TypeScript
+        run: npm run typecheck
+
+      - name: Executar testes
+        run: npm run test
+
+      - name: Verificar arquitetura
+        run: npm run arquitetura:verificar
+
+      - name: Compilar aplicação com Next 16
+        run: npm run build
+
+      - name: Registrar apenas se tudo estiver verde
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json eslint.config.mjs .eslintrc.json \
+            src/componentes/AvatarPersonagem.tsx \
+            src/componentes/LinhaDoTempo.tsx \
+            src/componentes/PaginaRadio.tsx \
+            src/componentes/Retrospectiva.tsx \
+            src/componentes/radio/BarraReproducao.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "seguranca: migrar para Next 16 e React 19"
+          git push origin HEAD:feat/100-melhorias-enlace

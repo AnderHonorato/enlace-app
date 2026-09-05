@@ -7,10 +7,10 @@ import { notifyPartner } from "@/nucleo/notificacoes";
 // Sair encerra a sessão para OS DOIS na hora — não existe "sozinho continua
 // jogando". Idempotente: sair de novo (ou de uma sessão já finalizada) só
 // devolve o estado atual, sem erro.
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const session = await getSessionOr404(params.id, user.id);
+    const session = await getSessionOr404((await params).id, user.id);
 
     if (session.status === "finished" || session.status === "abandoned") {
       return json({ session: serializeSession(session, user.id) });

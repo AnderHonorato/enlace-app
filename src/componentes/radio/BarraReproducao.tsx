@@ -41,7 +41,7 @@ export function ReprodutorRadio({ persistent }: { persistent?: boolean }) {
   const [searchError, setSearchError] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
   const [minimized, setMinimized] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function onQuery(v: string) {
     setQuery(v);

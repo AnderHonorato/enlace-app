@@ -5,12 +5,15 @@ import { serializeCapsule } from "@/nucleo/planos";
 import { notifyPartner } from "@/nucleo/notificacoes";
 import { z } from "zod";
 
+type ContextoRota = { params: Promise<{ id: string }> };
+
 // Detalhe da cápsula — regra de selo: se ainda não pode abrir, esconde conteúdo
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
+    const { id } = await params;
     const capsule = await prisma.capsule.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { items: { orderBy: { createdAt: "asc" } } },
     });
     if (!capsule || capsule.coupleId !== user.coupleId) return bad("Cápsula não encontrada.", 404);
@@ -19,11 +22,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 }
 
 // Abrir cápsula (só depois da data)
-export async function PATCH(_req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(_req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
+    const { id } = await params;
     const capsule = await prisma.capsule.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { items: { orderBy: { createdAt: "asc" } } },
     });
     if (!capsule || capsule.coupleId !== user.coupleId) return bad("Cápsula não encontrada.", 404);
@@ -69,10 +73,11 @@ const addItemSchema = z.object({
   image: z.string().max(2000).nullable().optional(),
 });
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
-    const capsule = await prisma.capsule.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const capsule = await prisma.capsule.findUnique({ where: { id } });
     if (!capsule || capsule.coupleId !== user.coupleId) return bad("Cápsula não encontrada.", 404);
     if (capsule.openAt.getTime() <= Date.now() || capsule.status === "OPENED") {
       return bad("Esta cápsula já foi aberta ou a data de abertura já passou.", 400);
@@ -94,10 +99,11 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: ContextoRota) {
   return handle(async () => {
     const user = await requireUser();
-    const capsule = await prisma.capsule.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const capsule = await prisma.capsule.findUnique({ where: { id } });
     if (!capsule || capsule.coupleId !== user.coupleId) return bad("Cápsula não encontrada.", 404);
     if (capsule.authorId !== user.id) return bad("Só quem criou pode apagar.", 403);
     await prisma.capsule.delete({ where: { id: capsule.id } });

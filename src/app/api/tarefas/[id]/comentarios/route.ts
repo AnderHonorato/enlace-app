@@ -15,12 +15,12 @@ async function ownTask(id: string, coupleId: string | null) {
   return task && task.list.coupleId === coupleId ? task : null;
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
     if (!user.coupleId) return bad("Conecte-se com seu amor primeiro.");
 
-    const task = await ownTask(params.id, user.coupleId);
+    const task = await ownTask((await params).id, user.coupleId);
     if (!task) return bad("Tarefa não encontrada.", 404);
 
     const body = await req.json().catch(() => ({}));
@@ -61,7 +61,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
     if (!user.coupleId) return bad("Conecte-se com seu amor primeiro.");
@@ -70,7 +70,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     const commentId = url.searchParams.get("cid");
     if (!commentId) return bad("ID do comentário obrigatório.");
 
-    const task = await ownTask(params.id, user.coupleId);
+    const task = await ownTask((await params).id, user.coupleId);
     if (!task) return bad("Tarefa não encontrada.", 404);
 
     let comments: any[] = [];

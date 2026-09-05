@@ -27,10 +27,27 @@ export async function requireIdentity() {
   return user;
 }
 
+/**
+ * Defesa adicional contra CSRF em rotas que alteram dados usando cookie de
+ * sessão. Navegadores enviam Origin em POST/PATCH/DELETE; chamadas internas
+ * sem Origin continuam permitidas para não quebrar tarefas do servidor.
+ */
+export function requireSameOrigin(req: Request) {
+  const origin = req.headers.get("origin");
+  if (!origin) return;
+
+  let esperado: string;
+  try {
+    esperado = new URL(req.url).origin;
+  } catch {
+    throw bad("Origem inválida.", 403);
+  }
+
+  if (origin !== esperado) throw bad("Origem não permitida.", 403);
+}
+
 /** Envolve um handler, convertendo Responses lançadas e erros em JSON. */
-export function handle(
-  fn: () => Promise<Response>
-): Promise<Response> {
+export function handle(fn: () => Promise<Response>): Promise<Response> {
   return fn().catch((e) => {
     if (e instanceof Response) return e;
     console.error(e);

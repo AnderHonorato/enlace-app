@@ -322,8 +322,9 @@ function hasAppActivity(stats: NonNullable<DadosRetrospectiva["appStats"]>): boo
 export default async function RetrospectivaPage({
   searchParams,
 }: {
-  searchParams: { ano?: string; semestre?: string };
+  searchParams: Promise<{ ano?: string; semestre?: string }>;
 }) {
+  const searchParamsResolvidos = await searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
   const me = serializeMe(user);
@@ -332,13 +333,13 @@ export default async function RetrospectivaPage({
   const nowYear = now.getFullYear();
   const currentSemester = now.getMonth() < 6 ? 1 : 2;
 
-  const parsedYear = searchParams.ano ? Number(searchParams.ano) : nowYear;
-  const parsedSemester = searchParams.semestre ? Number(searchParams.semestre) : currentSemester;
+  const parsedYear = searchParamsResolvidos.ano ? Number(searchParamsResolvidos.ano) : nowYear;
+  const parsedSemester = searchParamsResolvidos.semestre ? Number(searchParamsResolvidos.semestre) : currentSemester;
   const validYear = Number.isInteger(parsedYear) && parsedYear >= 2000 && parsedYear <= nowYear + 1;
   const validSemester = parsedSemester === 1 || parsedSemester === 2;
   const year = validYear ? parsedYear : nowYear;
   const sem = validSemester ? parsedSemester : currentSemester;
-  if ((searchParams.ano && !validYear) || (searchParams.semestre && !validSemester)) {
+  if ((searchParamsResolvidos.ano && !validYear) || (searchParamsResolvidos.semestre && !validSemester)) {
     redirect(`/app/retrospectiva?ano=${year}&semestre=${sem}`);
   }
 

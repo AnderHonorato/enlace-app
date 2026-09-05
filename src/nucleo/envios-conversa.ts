@@ -3,15 +3,21 @@ import { prisma } from "./prisma";
 
 let tableReady: Promise<void> | null = null;
 
+type ColunaSqlite = { name: string };
+
 /**
- * O projeto ainda usa `prisma db push`, sem pasta de migrations. Criar a
- * tabela de forma idempotente mantém instalações existentes funcionando já
- * no primeiro upload depois do deploy, sem apagar nem reescrever dados.
+ * Mantém a tabela de uploads compatível com instalações SQLite antigas sem
+ * apagar arquivos existentes. Em PostgreSQL a estrutura deve ser aplicada por
+ * migração/db push; o runtime não tenta executar PRAGMA ou ALTER específicos.
  */
 export async function ensureChatUploadTable(): Promise<void> {
   if (!tableReady) {
     tableReady = (async () => {
-      await prisma.$executeRawUnsafe(`
+      const url = process.env.DATABASE_URL || "";
+      const sqlite = url.startsWith("file:") || !/^(postgres|postgresql):/i.test(url);
+      if (!sqlite) return;
+
+      await prisma.$executeRaw`
         CREATE TABLE IF NOT EXISTS "ChatUpload" (
           "id" TEXT NOT NULL PRIMARY KEY,
           "coupleId" TEXT NOT NULL,
@@ -20,12 +26,47 @@ export async function ensureChatUploadTable(): Promise<void> {
           "mime" TEXT NOT NULL,
           "size" INTEGER NOT NULL,
           "data" BLOB NOT NULL,
+          "storageProvider" TEXT NOT NULL DEFAULT 'database',
+          "storageKey" TEXT,
+          "category" TEXT NOT NULL DEFAULT 'chat',
           "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
-      `);
-      await prisma.$executeRawUnsafe(
-        `CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_createdAt_idx" ON "ChatUpload"("coupleId", "createdAt")`
-      );
+      `;
+
+      const colunas = await prisma.$queryRaw<ColunaSqlite[]>`PRAGMA table_info("ChatUpload")`;
+      const nomes = new Set(colunas.map((c) => c.name));
+
+      if (!nomes.has("storageProvider")) {
+        await prisma.$executeRaw`
+          ALTER TABLE "ChatUpload"
+          ADD COLUMN "storageProvider" TEXT NOT NULL DEFAULT 'database'
+        `;
+      }
+      if (!nomes.has("storageKey")) {
+        await prisma.$executeRaw`
+          ALTER TABLE "ChatUpload"
+          ADD COLUMN "storageKey" TEXT
+        `;
+      }
+      if (!nomes.has("category")) {
+        await prisma.$executeRaw`
+          ALTER TABLE "ChatUpload"
+          ADD COLUMN "category" TEXT NOT NULL DEFAULT 'chat'
+        `;
+      }
+
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_createdAt_idx"
+        ON "ChatUpload"("coupleId", "createdAt")
+      `;
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "ChatUpload_coupleId_category_createdAt_idx"
+        ON "ChatUpload"("coupleId", "category", "createdAt")
+      `;
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "ChatUpload_uploaderId_createdAt_idx"
+        ON "ChatUpload"("uploaderId", "createdAt")
+      `;
     })().catch((error) => {
       tableReady = null;
       throw error;

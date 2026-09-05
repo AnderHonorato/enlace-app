@@ -247,7 +247,6 @@ function useAnimatedNumber(target: number, reduceMotion: boolean) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, reduceMotion]);
   return display;
 }

@@ -1,0 +1,47 @@
+name: Qualidade
+
+on:
+  pull_request:
+  push:
+    branches: [main, feat/100-melhorias-enlace]
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: file:./prisma/ci.db
+      APP_SECRET: enlace-ci-enlace-ci-enlace-ci-enlace-ci
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v5
+
+      - name: Preparar Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20.20.2
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Validar Prisma
+        run: npx prisma validate
+
+      - name: Verificar lint
+        run: npm run lint
+
+      - name: Verificar TypeScript
+        run: npm run typecheck
+
+      - name: Executar testes
+        run: npm run test
+
+      - name: Verificar arquitetura
+        run: npm run arquitetura:verificar
+
+      - name: Compilar aplicação
+        run: npm run build

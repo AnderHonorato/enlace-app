@@ -13,6 +13,31 @@ async function garantirColunaAgoraTocando() {
   }
 }
 
+async function garantirAdministradorAnder() {
+  const email = process.env.ENLACE_ADMIN_EMAIL?.trim().toLowerCase();
+  if (email) {
+    await prisma.$executeRaw`
+      INSERT OR IGNORE INTO "AdministradorAplicativo" ("userId")
+      SELECT "id" FROM "User" WHERE lower("email") = ${email}
+        AND NOT EXISTS (SELECT 1 FROM "AdministradorAplicativo")
+      LIMIT 1
+    `;
+    return;
+  }
+
+  await prisma.$executeRawUnsafe(`
+    INSERT OR IGNORE INTO "AdministradorAplicativo" ("userId")
+    SELECT "id" FROM "User"
+    WHERE (
+      lower(trim("name")) IN ('ander', 'anderson', 'anderson honorato')
+      OR lower(trim(COALESCE("displayName", ''))) = 'ander'
+    )
+      AND NOT EXISTS (SELECT 1 FROM "AdministradorAplicativo")
+    ORDER BY "createdAt" ASC
+    LIMIT 1
+  `);
+}
+
 // Migração estritamente aditiva para instalações locais que possuem tabelas
 // legadas. Diferente de `prisma db push`, este script nunca compara/removerá
 // estruturas antigas: só cria o que esta versão passou a usar.
@@ -107,6 +132,25 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS "Entry_authorId_entryDate_createdAt_idx"
     ON "Entry"("authorId", "entryDate", "createdAt")`,
   `CREATE INDEX IF NOT EXISTS "Attachment_entryId_type_idx" ON "Attachment"("entryId", "type")`,
+
+  `CREATE TABLE IF NOT EXISTS "AdministradorAplicativo" (
+    "userId" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AdministradorAplicativo_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "PontoLocalizacao" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "lat" REAL NOT NULL,
+    "lng" REAL NOT NULL,
+    "precisao" REAL,
+    "registradoEm" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PontoLocalizacao_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE INDEX IF NOT EXISTS "PontoLocalizacao_userId_registradoEm_idx"
+    ON "PontoLocalizacao"("userId", "registradoEm")`,
 ];
 
 try {
@@ -114,6 +158,7 @@ try {
   await prisma.$transaction(async (database) => {
     for (const statement of statements) await database.$executeRawUnsafe(statement);
   });
+  await garantirAdministradorAnder();
   console.log("Banco atualizado com segurança. Nenhuma tabela ou registro foi removido.");
 } catch (error) {
   console.error("Não foi possível aplicar a atualização aditiva do banco.");

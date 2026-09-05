@@ -14,10 +14,10 @@ import { parseJson } from "@/nucleo/jogos/utilitarios";
 // O coração do multiplayer: recebe UMA jogada, aplica o redutor puro do jogo
 // (lib/jogos/*), e grava estado + turno + placar num único UPDATE. O servidor
 // é a única fonte de verdade — o cliente nunca escreve estado diretamente.
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const session = await getSessionOr404(params.id, user.id);
+    const session = await getSessionOr404((await params).id, user.id);
 
     if (session.status !== "active") {
       return bad("Essa sessão não está ativa.", 400);

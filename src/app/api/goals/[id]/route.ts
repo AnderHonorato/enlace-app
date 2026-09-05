@@ -19,10 +19,10 @@ async function ownGoal(id: string, coupleId: string | null) {
   return goal && goal.coupleId === coupleId ? goal : null;
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const goal = await ownGoal(params.id, user.coupleId);
+    const goal = await ownGoal((await params).id, user.coupleId);
     if (!goal) return bad("Meta não encontrada.", 404);
     const body = await req.json().catch(() => ({}));
     const parsed = patchSchema.safeParse(body);
@@ -48,10 +48,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const user = await requireUser();
-    const goal = await ownGoal(params.id, user.coupleId);
+    const goal = await ownGoal((await params).id, user.coupleId);
     if (!goal) return bad("Meta não encontrada.", 404);
     await prisma.goal.delete({ where: { id: goal.id } });
     return json({ ok: true });
