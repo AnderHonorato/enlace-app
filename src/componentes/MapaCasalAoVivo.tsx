@@ -7,10 +7,12 @@ import "leaflet/dist/leaflet.css";
 import { useLiveLocationContext } from "@/nucleo/localizacao-ao-vivo";
 import { Avatar } from "./Avatar";
 import { cn } from "@/nucleo/utilitarios";
+import { HistoricoLocalizacaoAdmin } from "./HistoricoLocalizacaoAdmin";
 
 type Props = {
   me: { id: string; name: string; displayName: string | null; avatarColor: string; avatarUrl: string | null };
   partner: { id: string; name: string; displayName: string | null; avatarColor: string; avatarUrl: string | null } | null;
+  isAdmin: boolean;
 };
 
 function fmtAgo(iso: string | null): string {
@@ -22,7 +24,7 @@ function fmtAgo(iso: string | null): string {
   return `${min}min`;
 }
 
-export function LiveCoupleMap({ me, partner: partnerInfo }: Props) {
+export function LiveCoupleMap({ me, partner: partnerInfo, isAdmin }: Props) {
   const { myPos, sharing, partner, error, locating, startSharing, stopSharing } = useLiveLocationContext();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -243,6 +245,22 @@ export function LiveCoupleMap({ me, partner: partnerInfo }: Props) {
             updatedAt={partner?.updatedAt ?? null}
           />
         </div>
+      )}
+
+      {isAdmin && (
+        <HistoricoLocalizacaoAdmin
+          usuarios={[
+            { id: me.id, nome: meName, avatarColor: me.avatarColor },
+            ...(partnerInfo
+              ? [{
+                  id: partnerInfo.id,
+                  nome: partnerInfo.displayName || partnerInfo.name,
+                  avatarColor: partnerInfo.avatarColor,
+                }]
+              : []),
+          ]}
+          usuarioInicialId={partnerInfo?.id ?? me.id}
+        />
       )}
     </div>
   );

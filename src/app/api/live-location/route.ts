@@ -8,6 +8,7 @@ const localizacaoSchema = z
   .object({
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
+    precisao: z.number().min(0).max(100_000).optional(),
     sharing: z.boolean().optional(),
   })
   .refine((dados) => (dados.lat === undefined) === (dados.lng === undefined), {
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
     const parsed = localizacaoSchema.safeParse(body);
     if (!parsed.success) return bad(parsed.error.errors[0].message);
 
-    const { lat, lng, sharing } = parsed.data;
+    const { lat, lng, precisao, sharing } = parsed.data;
 
     if (sharing === false) {
       await prisma.user.update({
@@ -122,6 +123,13 @@ export async function POST(req: Request) {
           : {}),
       },
     });
+
+    if (temCoordenadas && lat !== undefined && lng !== undefined) {
+      const { registrarPontoLocalizacao } = await import(
+        "@/nucleo/historico-localizacao-servidor"
+      );
+      await registrarPontoLocalizacao({ userId: user.id, lat, lng, precisao });
+    }
 
     return json({ ok: true, sharing: sharing ?? estadoAtual });
   });

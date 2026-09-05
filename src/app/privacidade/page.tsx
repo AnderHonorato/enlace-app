@@ -19,7 +19,7 @@ export default async function PrivacidadePage() {
 
       <p className="kicker">Documento legal</p>
       <h1 className="display mt-2 text-[30px] text-text">Política de Privacidade</h1>
-      <p className="mt-2 text-[12.5px] text-faint">Última atualização: julho de 2026</p>
+      <p className="mt-2 text-[12.5px] text-faint">Última atualização: setembro de 2026</p>
 
       <div className="mt-10">
         <section>
@@ -27,6 +27,8 @@ export default async function PrivacidadePage() {
           <p className="mt-2.5 text-[14.5px] leading-[1.72] text-muted">
             Coletamos apenas as informações necessárias para o funcionamento do serviço: nome, e-mail, conteúdo das
             memórias que você escreve, fotos enviadas, preferências de tema e dados de uso anônimos para análise.
+            Quando você ativa voluntariamente a localização ao vivo, também armazenamos amostras de coordenadas,
+            data, horário e precisão aproximada enquanto o compartilhamento permanecer ligado.
           </p>
         </section>
 
@@ -38,6 +40,10 @@ export default async function PrivacidadePage() {
             Seus dados são usados exclusivamente para fornecer o serviço: exibir suas memórias, conectar você com
             seu parceiro(a), gerar resumos com IA e enviar notificações quando configuradas. Não vendemos, alugamos
             ou compartilhamos seus dados com terceiros para fins comerciais.
+          </p>
+          <p className="mt-2.5 text-[14.5px] leading-[1.72] text-muted">
+            As amostras de localização formam um histórico de trajeto e paradas. Esse histórico fica restrito à
+            conta administradora autorizada; desligar o compartilhamento interrompe imediatamente novos registros.
           </p>
         </section>
 

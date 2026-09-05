@@ -64,16 +64,18 @@ model User {
   coupleId String?
   couple   Couple? @relation("CoupleMembers", fields: [coupleId], references: [id], onDelete: SetNull)
 
-  entries      Entry[]
-  comments     Comment[]
-  reactions    Reaction[]
-  commentLikes CommentLike[]
-  gameScores   GameScore[]
-  chatMessages ChatMessage[]
-  messagesSent Message[]
-  pushSubs     PushSub[]
-  tasks        TaskItem[]
-  authSessions AuthSession[]
+  entries             Entry[]
+  comments            Comment[]
+  reactions           Reaction[]
+  commentLikes        CommentLike[]
+  gameScores          GameScore[]
+  chatMessages        ChatMessage[]
+  messagesSent        Message[]
+  pushSubs            PushSub[]
+  tasks               TaskItem[]
+  authSessions        AuthSession[]
+  pontosLocalizacao   PontoLocalizacao[]
+  acessoAdministrador AdministradorAplicativo?
 
   gameSessionsHosted GameSession[] @relation("GameSessionHost")
   gameSessionsGuest  GameSession[] @relation("GameSessionGuest")
@@ -634,4 +636,26 @@ model AuthSession {
 
   @@index([userId, revokedAt])
   @@index([expiresAt])
+}
+
+/// Permissão administrativa persistida. A interface nunca é a única barreira:
+/// toda leitura sensível também valida esta tabela no servidor.
+model AdministradorAplicativo {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+/// Amostra do trajeto enquanto o próprio usuário mantém o compartilhamento
+/// de localização ativo. Pontos não são criados após ele tocar em "Parar".
+model PontoLocalizacao {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lat          Float
+  lng          Float
+  precisao     Float?
+  registradoEm DateTime @default(now())
+
+  @@index([userId, registradoEm])
 }
